@@ -3,9 +3,9 @@
  * Lógica de Autenticación para el Panel de Administración
  */
 
-// 1. IMPORTACIONES DE FIREBASE (Deben ir siempre en la primera línea)
-import './db-config.js'; // Importamos tu archivo de configuración para inicializar la conexión
-import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+// 1. IMPORTACIONES DE FIREBASE (Versión 10.12.0 para compatibilidad)
+import './db-config.js'; 
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 // Inicializamos el servicio de Autenticación
 const auth = getAuth();
@@ -27,7 +27,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Manejo del envío del formulario
     if (loginForm) {
-        // ¡IMPORTANTE! Agregamos "async" aquí para poder esperar la respuesta de Firebase
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault(); // Evitar recarga de la página
             
@@ -50,25 +49,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if(btnIcon) btnIcon.classList.add('hidden');
             if(btnSpinner) btnSpinner.classList.remove('hidden');
 
-            //CONEXIÓN REAL CON FIREBASE AUTH 
+            // CONEXIÓN REAL CON FIREBASE AUTH 
             try {
-                // Firebase valida el correo y la contraseña contra tu proyecto
+                // Firebase valida el correo y la contraseña
                 await signInWithEmailAndPassword(auth, email, password);
                 
-                // Si la línea de arriba no falla, significa que el login fue exitoso. Redirigimos:
+                // Si la línea de arriba no falla, el login fue exitoso. Redirigimos:
                 window.location.href = 'dashboard.html';
 
             } catch (error) {
-                // Si Firebase rechaza la contraseña o no encuentra el correo, cae aquí:
                 console.error("Error de login:", error.code, error.message);
                 
-                // Mostrar mensaje de error rojo al usuario
+                // Mostrar mensaje de error al usuario
                 errorBox.querySelector('span').textContent = 'Credenciales incorrectas. Acceso denegado.';
                 errorBox.classList.remove('hidden');
 
-                // Restaurar el botón para que pueda intentar de nuevo
+                // Restaurar el botón para intentar de nuevo
                 btnLogin.disabled = false;
-                btnText.textContent = 'Ingresar al sistema'; // Asegúrate de que este sea el texto original de tu botón
+                btnText.textContent = 'Ingresar al Sistema'; 
                 if(btnIcon) btnIcon.classList.remove('hidden');
                 if(btnSpinner) btnSpinner.classList.add('hidden');
             }
