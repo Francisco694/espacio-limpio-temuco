@@ -3,6 +3,13 @@
  * Lógica de Autenticación para el Panel de Administración
  */
 
+// 1. IMPORTACIONES DE FIREBASE (Deben ir siempre en la primera línea)
+import './db-config.js'; // Importamos tu archivo de configuración para inicializar la conexión
+import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+
+// Inicializamos el servicio de Autenticación
+const auth = getAuth();
+
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Inicializar iconos de Lucide
     if (window.lucide) {
@@ -20,7 +27,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. Manejo del envío del formulario
     if (loginForm) {
-        loginForm.addEventListener('submit', (e) => {
+        // ¡IMPORTANTE! Agregamos "async" aquí para poder esperar la respuesta de Firebase
+        loginForm.addEventListener('submit', async (e) => {
             e.preventDefault(); // Evitar recarga de la página
             
             const email = document.getElementById('email').value.trim();
@@ -39,18 +47,31 @@ document.addEventListener('DOMContentLoaded', () => {
             // Cambiar interfaz a estado de "Cargando"
             btnLogin.disabled = true;
             btnText.textContent = 'Autenticando...';
-            btnIcon.classList.add('hidden');
-            btnSpinner.classList.remove('hidden');
+            if(btnIcon) btnIcon.classList.add('hidden');
+            if(btnSpinner) btnSpinner.classList.remove('hidden');
 
-            /* * SIMULACIÓN DE LOGIN 
-             * Reemplaza este bloque con la lógica real de Firebase Auth:
-             * import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-             * signInWithEmailAndPassword(auth, email, password)...
-             */
-            setTimeout(() => {
-                // Simulación exitosa, redirigir al Dashboard
+            //CONEXIÓN REAL CON FIREBASE AUTH 
+            try {
+                // Firebase valida el correo y la contraseña contra tu proyecto
+                await signInWithEmailAndPassword(auth, email, password);
+                
+                // Si la línea de arriba no falla, significa que el login fue exitoso. Redirigimos:
                 window.location.href = 'dashboard.html';
-            }, 1500);
+
+            } catch (error) {
+                // Si Firebase rechaza la contraseña o no encuentra el correo, cae aquí:
+                console.error("Error de login:", error.code, error.message);
+                
+                // Mostrar mensaje de error rojo al usuario
+                errorBox.querySelector('span').textContent = 'Credenciales incorrectas. Acceso denegado.';
+                errorBox.classList.remove('hidden');
+
+                // Restaurar el botón para que pueda intentar de nuevo
+                btnLogin.disabled = false;
+                btnText.textContent = 'Ingresar al sistema'; // Asegúrate de que este sea el texto original de tu botón
+                if(btnIcon) btnIcon.classList.remove('hidden');
+                if(btnSpinner) btnSpinner.classList.add('hidden');
+            }
         });
     }
 

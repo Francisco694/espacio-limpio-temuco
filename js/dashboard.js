@@ -265,4 +265,37 @@ function init() {
     const btnExport = document.getElementById('btn-export'); if (btnExport) btnExport.addEventListener('click', exportarCSV);
     try { suscribirACotizaciones(); } catch (err) { cargarDatosDemostracion(); }
 }
+import { collection, addDoc, Timestamp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+async function generarDataHistorica() {
+    const servicios = ['Limpieza Residencial', 'Oficinas', 'Post-Construcción', 'Hornos'];
+    const estados = ['Concretada', 'Pendiente', 'Agendado'];
+    const nombres = ['Juan Pérez', 'María Soto', 'Inmobiliaria Araucanía', 'Carlos Ruiz', 'Empresa Temuco', 'Ana Morales'];
+    
+    console.log("Iniciando carga de datos históricos...");
+
+    for (let i = 0; i < 6; i++) { // 6 meses
+        for (let j = 0; j < 15; j++) { // 15 cotizaciones por mes
+            
+            // Generar fecha aleatoria dentro del mes correspondiente
+            const fecha = new Date();
+            fecha.setMonth(fecha.getMonth() - i);
+            fecha.setDate(Math.floor(Math.random() * 28) + 1);
+
+            const totalM2 = Math.floor(Math.random() * 150) + 40;
+            const valor = totalM2 * 1200;
+
+            await addDoc(collection(db, "cotizaciones"), {
+                rut: `${Math.floor(Math.random() * 10 + 15)}.${Math.floor(Math.random() * 800 + 100)}.${Math.floor(Math.random() * 800 + 100)}-${Math.floor(Math.random() * 9)}`,
+                nombre: nombres[Math.floor(Math.random() * nombres.length)],
+                servicio: servicios[Math.floor(Math.random() * servicios.length)],
+                valorCotizado: `$ ${valor.toLocaleString('es-CL')}`,
+                estadoCRM: estados[Math.floor(Math.random() * estados.length)],
+                timestamp: Timestamp.fromDate(fecha),
+                fechaAgendada: fecha.toISOString().split('T')[0]
+            });
+        }
+    }
+    alert("¡Carga masiva completada! 90 registros creados.");
+}
 document.addEventListener('DOMContentLoaded', init);
