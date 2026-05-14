@@ -231,19 +231,23 @@
             </section>
 
             <!-- VISTA: REPORTES -->
-            <section id="view-reportes" class="view">
+          <section id="view-reportes" class="view">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="glass-panel p-6">
                         <div class="flex justify-between items-center mb-6">
                             <h3 class="font-bold text-slate-800"><i data-lucide="pie-chart" class="inline w-5 h-5 mr-2 text-blue-600"></i>Servicios más Solicitados</h3>
                         </div>
-                        <div class="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-slate-100 border-dashed text-slate-400 text-sm">Gráfico en desarrollo</div>
+                        <div class="h-64 relative w-full">
+                            <canvas id="chart-servicios"></canvas>
+                        </div>
                     </div>
                     <div class="glass-panel p-6">
                         <div class="flex justify-between items-center mb-6">
-                            <h3 class="font-bold text-slate-800"><i data-lucide="trending-up" class="inline w-5 h-5 mr-2 text-green-600"></i>Tasa de Conversión</h3>
+                            <h3 class="font-bold text-slate-800"><i data-lucide="trending-up" class="inline w-5 h-5 mr-2 text-green-600"></i>Tasa de Conversión (Cotizaciones)</h3>
                         </div>
-                        <div class="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-slate-100 border-dashed text-slate-400 text-sm">Métricas en desarrollo</div>
+                        <div class="h-64 relative w-full">
+                            <canvas id="chart-conversion"></canvas>
+                        </div>
                     </div>
                 </div>
             </section>

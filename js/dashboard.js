@@ -1,11 +1,10 @@
 /**
  * js/dashboard.js — Espacio Limpio Ltda.
  * Arquitectura Vanilla JS (ES6) - Estilo SaaS Premium
- * Integrado Full con Formulario Web y Firebase en Tiempo Real
  */
 
 import { db } from './db-config.js';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, Timestamp, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const auth = getAuth();
@@ -21,6 +20,8 @@ const AppState = {
     citas: [],
     notificaciones: [],
     chartInstance: null,
+    chartServicios: null,
+    chartConversion: null,
     calendarInstance: null,
     isInitialLoad: true
 };
@@ -45,8 +46,8 @@ const Utils = {
         return Utils.formatDate(date.toISOString().split('T')[0]);
     },
     escapeHtml: (str) => String(str).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' })[m]),
-    animateNumber: (id, target) => {
-        const el = document.getElementById(id);
+    animateNumber: (selector, target) => {
+        const el = document.querySelector(selector);
         if (!el) return;
         if(typeof target === 'string' && target.includes('$')) { el.textContent = target; return; }
         const start = parseInt(el.textContent) || 0;
@@ -80,30 +81,20 @@ window.UI = {
         if (window.lucide) lucide.createIcons();
         setTimeout(() => { toast.classList.add('fade-out'); setTimeout(() => toast.remove(), 300); }, 3000);
     },
-
-    openModal(id) { 
-        document.getElementById(id)?.classList.add('active'); 
-    },
-    
+    openModal(id) { document.getElementById(id)?.classList.add('active'); },
     closeModal(id) { 
         const modal = document.getElementById(id);
-        if (modal) {
-            modal.classList.remove('active');
-            modal.querySelectorAll('form').forEach(f => f.reset());
-        }
+        if (modal) { modal.classList.remove('active'); modal.querySelectorAll('form').forEach(f => f.reset()); }
     },
-
     toggleDropdown(id) {
         document.querySelectorAll('.dropdown-menu').forEach(d => { if (d.id !== id) d.classList.remove('active'); });
         document.getElementById(id)?.classList.toggle('active');
     },
-
     toggleSkeleton(active) {
         document.querySelectorAll('[data-kpi], table tbody tr td, .chart-wrap').forEach(el => {
             if (active) el.classList.add('skeleton'); else el.classList.remove('skeleton');
         });
     },
-
     getBadgeClass(status) {
         const s = (status || '').toLowerCase();
         if(s.includes('aprobad') || s.includes('completad') || s.includes('confirmad')) return 'estado-aprobada';
@@ -134,14 +125,12 @@ const Calculator = {
         if(servicio === 'electro') {
             subtotal = base;
         } else {
-            // Precio por M2 basado en landing + costos operativos extra
             let factorM2 = (servicio === 'post') ? 2500 : (servicio === 'oficina' ? 1500 : 1200);
-            let m2Calc = m2 > 0 ? m2 : 30; // Minimo 30m2 as default
+            let m2Calc = m2 > 0 ? m2 : 30; 
             subtotal = (factorM2 * m2Calc) + ((personal - 1) * 15000) - descuento;
         }
         
         if (subtotal < 0) subtotal = 0;
-
         let iva = Math.round(subtotal * 0.19);
         let total = subtotal + iva;
         this.updateUI(subtotal, iva, total);
@@ -185,43 +174,27 @@ const Notifications = {
         `).join('');
         if(window.lucide) lucide.createIcons();
     },
-    markAllRead() {
-        AppState.notificaciones.forEach(n => n.read = true);
-        this.render();
-        UI.showToast('Notificaciones marcadas como leídas', 'info');
-    }
+    markAllRead() { AppState.notificaciones.forEach(n => n.read = true); this.render(); UI.showToast('Leídas', 'info'); }
 };
 
-// ==============================================================
-// 5. CONTROLADORES DE INTERFAZ Y MODALES (Flujo SaaS)
-// ==============================================================
 window.Controllers = {
-    newCliente() {
-        UI.openModal('modal-cliente');
-    },
-
+    newCliente() { UI.openModal('modal-cliente'); },
     newCotizacion() {
-        UI.closeModal('modal-cotizacion'); // Reset forms
+        UI.closeModal('modal-cotizacion');
         document.getElementById('cot-id').value = '';
         document.getElementById('cot-modal-title').textContent = 'Generar Cotización Manual';
-        document.getElementById('cot-modal-source').innerHTML = '<i data-lucide="laptop" class="inline w-3 h-3 mr-1"></i> Origen: Creación Manual en CRM';
-        document.getElementById('cot-modal-source').className = "text-xs font-semibold text-slate-500 mt-1";
-        
-        // Mostrar botones de nueva coti
+        document.getElementById('cot-modal-source').innerHTML = '<i data-lucide="laptop" class="inline w-3 h-3 mr-1"></i> Origen: Manual';
         document.getElementById('btn-approve-cotizacion').classList.add('hidden');
         document.getElementById('btn-reject-cotizacion').classList.add('hidden');
         document.getElementById('btn-export-pdf').classList.add('hidden');
         document.getElementById('btn-save-draft').textContent = 'Guardar Cotización';
-
         if(window.lucide) lucide.createIcons();
         Calculator.calculate();
         UI.openModal('modal-cotizacion');
     },
-
     editCotizacion(id) {
         const c = AppState.cotizaciones.find(x => x.id === id);
         if(!c) return;
-
         document.getElementById('cot-id').value = c.id;
         document.getElementById('cot-nombre').value = c.cliente || c.nombre || '';
         document.getElementById('cot-rut').value = c.rut || '';
@@ -230,7 +203,6 @@ window.Controllers = {
         document.getElementById('cot-direccion').value = c.direccion || '';
         document.getElementById('cot-tipoCliente').value = c.tipoCliente || 'Persona Natural';
         
-        // Adaptar servicio al select
         let selValue = c.tipoLimpieza || c.servicio || 'hogar';
         if(selValue === 'Limpieza Residencial') selValue = 'hogar';
         if(selValue === 'Limpieza de Oficinas') selValue = 'oficina';
@@ -245,29 +217,21 @@ window.Controllers = {
         document.getElementById('cot-personal').value = c.personal || 1;
         document.getElementById('cot-descuento').value = c.descuento || 0;
 
-        // Títulos
         document.getElementById('cot-modal-title').textContent = `Cotización: ${c.cliente || c.nombre}`;
         const esWeb = c.fuente === 'Modal Web' || !c.fuente;
         document.getElementById('cot-modal-source').innerHTML = esWeb ? '<i data-lucide="globe" class="inline w-3 h-3 mr-1"></i> Origen: Solicitud Web Pública' : '<i data-lucide="laptop" class="inline w-3 h-3 mr-1"></i> Origen: Manual';
-        document.getElementById('cot-modal-source').className = `text-xs font-semibold mt-1 ${esWeb ? 'text-blue-600' : 'text-slate-500'}`;
-
-        // Controles según estado
+        
         const btnSave = document.getElementById('btn-save-draft');
         const btnApprove = document.getElementById('btn-approve-cotizacion');
         const btnReject = document.getElementById('btn-reject-cotizacion');
-        const btnPdf = document.getElementById('btn-export-pdf');
-
+        
         btnSave.textContent = 'Actualizar Datos';
-        btnPdf.classList.remove('hidden');
+        document.getElementById('btn-export-pdf').classList.remove('hidden');
 
         if(c.estadoCRM === 'Aprobada' || c.estadoCRM === 'Rechazada') {
-            btnApprove.classList.add('hidden');
-            btnReject.classList.add('hidden');
-            btnSave.classList.add('hidden'); // Solo vista
+            btnApprove.classList.add('hidden'); btnReject.classList.add('hidden'); btnSave.classList.add('hidden');
         } else {
-            btnApprove.classList.remove('hidden');
-            btnReject.classList.remove('hidden');
-            btnSave.classList.remove('hidden');
+            btnApprove.classList.remove('hidden'); btnReject.classList.remove('hidden'); btnSave.classList.remove('hidden');
         }
 
         if(window.lucide) lucide.createIcons();
@@ -293,6 +257,7 @@ const Views = {
         
         if (viewId === 'panel') this.renderDashboard();
         if (viewId === 'agendamiento') this.renderCalendar();
+        if (viewId === 'reportes') this.renderReportes();
     },
 
     renderDashboard() {
@@ -301,12 +266,11 @@ const Views = {
         const hoy = new Date().toISOString().split('T')[0];
         const ingresos = AppState.cotizaciones.filter(c => c.estadoCRM === 'Aprobada').reduce((acc, c) => acc + (parseInt(c.valorTotal) || parseInt(c.valorCotizado?.replace(/\D/g,'')) || 0), 0);
         
-        Utils.animateNumber('kpi-clientes', AppState.clientes.length);
-        Utils.animateNumber('kpi-citas', AppState.citas.filter(c => c.fecha === hoy).length);
-        Utils.animateNumber('kpi-pendientes', AppState.cotizaciones.filter(c => c.estadoCRM?.includes('Pendiente') || c.estadoCRM?.includes('Revisión')).length);
-        Utils.animateNumber('kpi-ingresos', Utils.formatCLP(ingresos));
+        Utils.animateNumber('[data-kpi="clientes"]', AppState.clientes.length);
+        Utils.animateNumber('[data-kpi="citas"]', AppState.citas.filter(c => c.fecha === hoy || c.fechaAgendada === hoy).length);
+        Utils.animateNumber('[data-kpi="pendientes"]', AppState.cotizaciones.filter(c => c.estadoCRM?.includes('Pendiente') || c.estadoCRM?.includes('Revisi')).length);
+        Utils.animateNumber('[data-kpi="ingresos"]', Utils.formatCLP(ingresos));
 
-        // Tabla Reciente (Mezcla Citas Web y Cotizaciones Manuales)
         const tbody = document.getElementById('recent-quotes-tbody');
         if(tbody) {
             const r = AppState.cotizaciones.slice(0, 5);
@@ -338,7 +302,6 @@ const Views = {
             const d = new Date(); d.setMonth(d.getMonth() - i);
             labels.push(d.toLocaleString('es', {month: 'short'}).toUpperCase());
             
-            // Buscar datos reales para este mes en particular
             const mesTarget = d.getMonth();
             const ingresosMes = AppState.cotizaciones.filter(c => {
                if(c.estadoCRM !== 'Aprobada') return false;
@@ -351,8 +314,55 @@ const Views = {
 
         AppState.chartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets: [{ label: 'Ingresos Históricos', data, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: '#2563eb' }] },
+            data: { labels, datasets: [{ label: 'Ingresos', data, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: '#2563eb' }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { border:{display:false}, grid:{color:'#f1f5f9'}, ticks: { color: '#64748b', callback: v => `$${v/1000}k` } }, x: { border:{display:false}, grid:{display:false}, ticks:{color:'#64748b'} } } }
+        });
+    },
+
+    renderReportes() {
+        if (AppState.view !== 'reportes') return;
+        const ctxServicios = document.getElementById('chart-servicios');
+        const ctxConversion = document.getElementById('chart-conversion');
+        if (!ctxServicios || !ctxConversion) return;
+
+        if (AppState.chartServicios) AppState.chartServicios.destroy();
+        if (AppState.chartConversion) AppState.chartConversion.destroy();
+
+        // 1. Gráfico de Torta (Servicios)
+        const counts = { hogar: 0, oficina: 0, post: 0, electro: 0 };
+        AppState.cotizaciones.forEach(c => {
+            let s = c.tipoLimpieza || c.servicio || '';
+            if (s.includes('Residencial') || s === 'hogar') counts.hogar++;
+            else if (s.includes('Oficinas') || s === 'oficina') counts.oficina++;
+            else if (s.includes('Post') || s === 'post') counts.post++;
+            else counts.electro++;
+        });
+
+        AppState.chartServicios = new Chart(ctxServicios, {
+            type: 'doughnut',
+            data: {
+                labels: ['Residencial', 'Oficinas', 'Post-Construcción', 'Hornos'],
+                datasets: [{ data: [counts.hogar, counts.oficina, counts.post, counts.electro], backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6'], borderWidth: 0 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+        });
+
+        // 2. Gráfico de Barras (Conversión)
+        let est = { aprobadas: 0, pendientes: 0, rechazadas: 0 };
+        AppState.cotizaciones.forEach(c => {
+            const e = (c.estadoCRM || '').toLowerCase();
+            if(e.includes('aprobad') || e.includes('agendad')) est.aprobadas++;
+            else if(e.includes('rechazad') || e.includes('cancelad')) est.rechazadas++;
+            else est.pendientes++;
+        });
+
+        AppState.chartConversion = new Chart(ctxConversion, {
+            type: 'bar',
+            data: {
+                labels: ['Aprobadas', 'Pendientes', 'Rechazadas'],
+                datasets: [{ label: 'Cantidad', data: [est.aprobadas, est.pendientes, est.rechazadas], backgroundColor: ['#10b981', '#f59e0b', '#ef4444'], borderRadius: 6 }]
+            },
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color: '#f1f5f9' }, ticks: { precision: 0 } }, x: { grid: { display: false } } } }
         });
     },
 
@@ -391,7 +401,6 @@ const Views = {
         `).join('');
         tbody.innerHTML = renderStr || `<tr><td colspan="6"><div class="empty-state"><i data-lucide="users"></i><h3>No hay clientes</h3></div></td></tr>`;
         
-        // Poblar Select Modal
         const select = document.getElementById('cot-cliente-select');
         if(select) select.innerHTML = '<option value="">Seleccione o escriba abajo...</option>' + AppState.clientes.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.nombre)}</option>`).join('');
         if(window.lucide) lucide.createIcons();
@@ -424,7 +433,6 @@ const Views = {
         const calEl = document.getElementById('calendar-container');
         if(!calEl || !window.FullCalendar) return;
 
-        // Extraer citas de las cotizaciones aprobadas o documentos de citas
         const events = AppState.cotizaciones.filter(c => c.estadoCRM === 'Aprobada').map(c => ({
             id: c.id, 
             title: `${c.cliente || c.nombre} - ${Utils.getServicioName(c.tipoLimpieza || c.servicio)}`, 
@@ -437,10 +445,7 @@ const Views = {
                 initialView: 'timeGridWeek', locale: 'es', slotMinTime: '08:00:00', slotMaxTime: '19:00:00',
                 headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' },
                 events: events,
-                eventClick: (info) => {
-                    UI.showToast('Abriendo detalles...', 'info');
-                    Controllers.editCotizacion(info.event.id);
-                }
+                eventClick: (info) => { UI.showToast('Abriendo detalles...', 'info'); Controllers.editCotizacion(info.event.id); }
             });
             AppState.calendarInstance.render();
         } else {
@@ -451,11 +456,10 @@ const Views = {
 };
 
 // ==============================================================
-// 7. FIREBASE DB CONTROLLER (Realtime CRUD)
+// 7. FIREBASE DB CONTROLLER
 // ==============================================================
 window.DB = {
     initDataListeners() {
-        // 1. Escuchar Cotizaciones (Web + CRM)
         const qCotiz = query(collection(db, 'cotizaciones'), orderBy('creadoEn', 'desc'));
         onSnapshot(qCotiz, (snapshot) => {
             snapshot.docChanges().forEach((change) => {
@@ -463,25 +467,30 @@ window.DB = {
                     const data = change.doc.data();
                     if (data.fuente === 'Modal Web') {
                         UI.showToast(`Nueva solicitud web de ${data.cliente || data.nombre}`, 'info');
-                        Notifications.add('Nueva Solicitud Web', `${data.cliente || data.nombre} requiere ${Utils.getServicioName(data.tipoLimpieza || data.servicio)}.`, 'quote');
+                        Notifications.add('Nueva Solicitud Web', `${data.cliente || data.nombre} requiere limpieza.`, 'quote');
                     }
                 }
             });
 
             AppState.cotizaciones = snapshot.docs.map(doc => ({
-                id: doc.id, ...doc.data(), creadoEnDate: doc.data().creadoEn?.toDate?.() || doc.data().timestamp?.toDate?.() || new Date()
+                id: doc.id, ...doc.data(), creadoEnDate: doc.data().creadoEn?.toDate?.() || new Date()
             }));
 
             AppState.isInitialLoad = false;
             Views.renderDashboard();
             Views.renderCotizaciones();
             if(AppState.view === 'agendamiento') Views.renderCalendar();
+            if(AppState.view === 'reportes') Views.renderReportes();
         }, err => console.error("Error Leyendo Cotizaciones", err));
 
-        // 2. Escuchar Clientes
         onSnapshot(query(collection(db, 'clientes'), orderBy('creadoEn', 'desc')), snap => {
             AppState.clientes = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             Views.renderClientes();
+            Views.renderDashboard();
+        });
+
+        onSnapshot(collection(db, 'citas'), snap => {
+            AppState.citas = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             Views.renderDashboard();
         });
     },
@@ -490,16 +499,12 @@ window.DB = {
         e.preventDefault();
         try {
             await addDoc(collection(db, 'clientes'), {
-                nombre: document.getElementById('cli-nombre').value,
-                rut: document.getElementById('cli-rut').value,
-                telefono: document.getElementById('cli-telefono').value,
-                correo: document.getElementById('cli-correo').value,
-                direccion: document.getElementById('cli-direccion').value,
-                fechaRegistro: new Date().toISOString().split('T')[0],
+                nombre: document.getElementById('cli-nombre').value, rut: document.getElementById('cli-rut').value,
+                telefono: document.getElementById('cli-telefono').value, correo: document.getElementById('cli-correo').value,
+                direccion: document.getElementById('cli-direccion').value, fechaRegistro: new Date().toISOString().split('T')[0],
                 creadoEn: serverTimestamp()
             });
-            UI.closeModal('modal-cliente');
-            UI.showToast('Cliente registrado con éxito');
+            UI.closeModal('modal-cliente'); UI.showToast('Cliente registrado con éxito');
         } catch(error) { UI.showToast('Error al guardar', 'error'); }
     },
 
@@ -511,51 +516,32 @@ window.DB = {
 
         const data = {
             cliente: document.getElementById('cot-nombre').value || 'Anónimo',
-            rut: document.getElementById('cot-rut').value,
-            telefono: document.getElementById('cot-telefono').value,
-            correo: document.getElementById('cot-correo').value,
-            direccion: document.getElementById('cot-direccion').value,
-            tipoCliente: document.getElementById('cot-tipoCliente').value,
-            tipoLimpieza: document.getElementById('cot-servicio').value,
-            fechaAgendada: document.getElementById('cot-fecha').value,
-            horaAgendada: document.getElementById('cot-hora').value,
-            metros: document.getElementById('cot-m2').value,
-            personal: document.getElementById('cot-personal').value,
-            descuento: document.getElementById('cot-descuento').value,
-            prioridad: document.getElementById('cot-prioridad').value,
-            descripcion: document.getElementById('cot-descripcion').value,
-            valorSubtotal: subtotal,
-            valorTotal: total,
-            estadoCRM: 'Pendiente - Revisada',
-            fuente: 'CRM Interno',
-            modificadoEn: serverTimestamp()
+            rut: document.getElementById('cot-rut').value, telefono: document.getElementById('cot-telefono').value,
+            correo: document.getElementById('cot-correo').value, direccion: document.getElementById('cot-direccion').value,
+            tipoCliente: document.getElementById('cot-tipoCliente').value, tipoLimpieza: document.getElementById('cot-servicio').value,
+            fechaAgendada: document.getElementById('cot-fecha').value, horaAgendada: document.getElementById('cot-hora').value,
+            metros: document.getElementById('cot-m2').value, personal: document.getElementById('cot-personal').value,
+            descuento: document.getElementById('cot-descuento').value, prioridad: document.getElementById('cot-prioridad').value,
+            descripcion: document.getElementById('cot-descripcion').value, valorSubtotal: subtotal, valorTotal: total,
+            estadoCRM: 'Pendiente - Revisada', fuente: 'CRM Interno', modificadoEn: serverTimestamp()
         };
 
         try {
-            if(id) {
-                await updateDoc(doc(db, 'cotizaciones', id), data);
-                UI.showToast('Cotización actualizada');
-            } else {
-                data.creadoEn = serverTimestamp();
-                await addDoc(collection(db, 'cotizaciones'), data);
-                UI.showToast('Nueva cotización creada');
-            }
+            if(id) { await updateDoc(doc(db, 'cotizaciones', id), data); UI.showToast('Cotización actualizada'); } 
+            else { data.creadoEn = serverTimestamp(); await addDoc(collection(db, 'cotizaciones'), data); UI.showToast('Nueva cotización creada'); }
             UI.closeModal('modal-cotizacion');
         } catch(error) { UI.showToast('Error al procesar', 'error'); }
     },
 
     async approveCotizacion() {
         const id = document.getElementById('cot-id').value;
-        if(!id) return UI.showToast('Primero guarde la cotización', 'error');
+        if(!id) return;
         if(!confirm('¿Aprobar y agendar este servicio definitivamente?')) return;
-        
         try {
             await updateDoc(doc(db, 'cotizaciones', id), { 
-                estadoCRM: 'Aprobada', modificadoEn: serverTimestamp(),
-                valorTotal: parseInt(document.getElementById('cot-valor-total').value) || 0
+                estadoCRM: 'Aprobada', modificadoEn: serverTimestamp(), valorTotal: parseInt(document.getElementById('cot-valor-total').value) || 0
             });
-            UI.closeModal('modal-cotizacion');
-            UI.showToast('¡Servicio Agendado! Evento creado en calendario.');
+            UI.closeModal('modal-cotizacion'); UI.showToast('¡Servicio Agendado! Evento creado en calendario.');
             Notifications.add('Servicio Agendado', `Cotización aprobada y registrada en agenda.`, 'agenda');
         } catch (err) { UI.showToast('Error al aprobar', 'error'); }
     },
@@ -564,132 +550,134 @@ window.DB = {
         const id = document.getElementById('cot-id').value;
         if(!id) return;
         const motivo = prompt('Por favor indique el motivo del rechazo (ej. Presupuesto, Cambio de fecha, etc):');
-        if(motivo === null) return; // Canceló
-        
+        if(motivo === null) return; 
         try {
-            await updateDoc(doc(db, 'cotizaciones', id), { 
-                estadoCRM: 'Rechazada', 
-                motivoRechazo: motivo,
-                modificadoEn: serverTimestamp() 
-            });
-            UI.closeModal('modal-cotizacion');
-            UI.showToast('Cotización rechazada', 'error');
+            await updateDoc(doc(db, 'cotizaciones', id), { estadoCRM: 'Rechazada', motivoRechazo: motivo, modificadoEn: serverTimestamp() });
+            UI.closeModal('modal-cotizacion'); UI.showToast('Cotización rechazada', 'error');
         } catch (err) { UI.showToast('Error de conexión', 'error'); }
     },
 
-    async deleteCliente(id) { if(confirm('¿Eliminar cliente?')) { await deleteDoc(doc(db, 'clientes', id)); UI.showToast('Eliminado', 'info'); } },
+    async deleteCliente(id) { if(confirm('¿Eliminar cliente permanentemente?')) { await deleteDoc(doc(db, 'clientes', id)); UI.showToast('Eliminado', 'info'); } },
     async deleteCotizacion(id) { if(confirm('¿Eliminar cotización permanentemente?')) { await deleteDoc(doc(db, 'cotizaciones', id)); UI.showToast('Eliminado', 'info'); } },
     
-    // --- GENERADOR DE DATOS DE PRUEBA INTEGRADO ---
+    // --- NUEVO GENERADOR: BORRA TODO Y CREA 15 CLIENTES ÚNICOS SIN REPETIR ---
     async ejecutarCargaMasiva() {
-        const password = prompt('Esta acción inyectará 105 registros de prueba. Escriba "CONFIRMAR" para proceder:');
-        if (password !== 'CONFIRMAR') {
-            UI.showToast('Carga masiva cancelada.', 'info');
-            return;
-        }
+        const authKey = prompt('ESTO BORRARÁ TODO y creará datos limpios sin repetir. Escriba "LIMPIAR" para confirmar:');
+        if (authKey !== 'LIMPIAR') return UI.showToast('Operación cancelada.', 'info');
 
-        UI.showToast('Iniciando carga de datos... Por favor espere.', 'info');
+        UI.showToast('Limpiando base de datos... Por favor espere.', 'info');
         
-        const NUM_CLIENTES = 15; 
-        const MESES_ATRAS = 7;
-        const nombres = ['Juan Pérez', 'María Soto', 'Inmobiliaria Araucanía', 'Carlos Ruiz', 'Empresa Temuco', 'Ana Morales', 'Constructora Sur', 'Pedro Silva', 'Camila Castro', 'Luis Gómez', 'Clínica Alemana', 'Automotora Centro', 'Sociedad de Inversiones', 'Colegio San José', 'Familia González'];
-        const servicios = ['hogar', 'oficina', 'post', 'electro'];
-        const estadosHistoricos = ['Aprobada', 'Aprobada', 'Aprobada', 'Rechazada', 'Pendiente']; 
-        const generarRut = () => `${Math.floor(Math.random() * 10 + 10)}.${Math.floor(Math.random() * 800 + 100)}.${Math.floor(Math.random() * 800 + 100)}-${Math.floor(Math.random() * 9)}`;
-        const generarTelefono = () => `+56 9 ${Math.floor(Math.random()*80000000 + 10000000)}`;
-
-        let registrosCreados = 0;
-
         try {
-            for (let i = 0; i <= MESES_ATRAS; i++) {
-                const clientesDelMes = Math.floor(Math.random() * 5) + (NUM_CLIENTES - 2); 
+            // 1. ELIMINAR DATOS BASURA ACTUALES
+            const colecciones = ['cotizaciones', 'clientes', 'citas'];
+            for (const colName of colecciones) {
+                const snapshot = await getDocs(collection(db, colName));
+                const promesas = [];
+                snapshot.forEach(docSnap => {
+                    promesas.push(deleteDoc(doc(db, colName, docSnap.id)));
+                });
+                await Promise.all(promesas); // Borra todo de golpe
+            }
 
-                for (let j = 0; j < clientesDelMes; j++) {
+            UI.showToast('Base de datos vacía. Generando nuevos registros...', 'info');
+
+            // 2. CREAR EXACTAMENTE 15 CLIENTES ÚNICOS
+            const clientesBase = [
+                { nombre: 'Constructora Sur', rut: '76.123.456-K', tipo: 'Empresa', dir: 'Av. Alemania 123' },
+                { nombre: 'Juan Pérez', rut: '15.432.123-5', tipo: 'Persona Natural', dir: 'Los Pablos 456' },
+                { nombre: 'Inmobiliaria Araucanía', rut: '77.222.333-4', tipo: 'Empresa', dir: 'San Martín 789' },
+                { nombre: 'María Soto', rut: '18.555.666-7', tipo: 'Persona Natural', dir: 'Av. Pablo Neruda 12' },
+                { nombre: 'Clínica Alemana Temuco', rut: '70.888.999-0', tipo: 'Empresa', dir: 'Senador Estébanez 2' },
+                { nombre: 'Carlos Ruiz', rut: '16.777.888-9', tipo: 'Persona Natural', dir: 'Barrio Inglés' },
+                { nombre: 'Automotora Centro', rut: '76.444.555-1', tipo: 'Empresa', dir: 'Caupolicán 1000' },
+                { nombre: 'Ana Morales', rut: '17.333.444-2', tipo: 'Persona Natural', dir: 'Portal de la Frontera' },
+                { nombre: 'Colegio San José', rut: '71.555.222-3', tipo: 'Empresa', dir: 'Pedro de Valdivia 500' },
+                { nombre: 'Pedro Silva', rut: '14.222.111-K', tipo: 'Persona Natural', dir: 'Fundo El Carmen' },
+                { nombre: 'Restaurante La Pampa', rut: '76.999.888-7', tipo: 'Empresa', dir: 'Av. Alemania 098' },
+                { nombre: 'Camila Castro', rut: '19.444.333-2', tipo: 'Persona Natural', dir: 'Labranza' },
+                { nombre: 'Sociedad de Inversiones', rut: '77.111.222-3', tipo: 'Empresa', dir: 'Torre Caupolicán 401' },
+                { nombre: 'Luis Gómez', rut: '16.888.777-6', tipo: 'Persona Natural', dir: 'Avenida España' },
+                { nombre: 'Familia González', rut: '12.333.222-1', tipo: 'Persona Natural', dir: 'Villa Los Ríos' }
+            ];
+
+            const clientesGuardados = [];
+            for (let i = 0; i < clientesBase.length; i++) {
+                const c = clientesBase[i];
+                const fechaRegistro = new Date();
+                fechaRegistro.setMonth(fechaRegistro.getMonth() - Math.floor(Math.random() * 6));
+                
+                const docRef = await addDoc(collection(db, 'clientes'), {
+                    nombre: c.nombre, rut: c.rut,
+                    correo: `contacto${i}@${c.tipo === 'Empresa' ? 'empresa.cl' : 'mail.com'}`,
+                    telefono: `+56 9 ${Math.floor(Math.random()*80000000 + 10000000)}`,
+                    direccion: c.dir, tipoCliente: c.tipo,
+                    fechaRegistro: fechaRegistro.toISOString().split('T')[0],
+                    creadoEn: Timestamp.fromDate(fechaRegistro)
+                });
+                clientesGuardados.push({ id: docRef.id, ...c });
+            }
+
+            // 3. GENERAR COTIZACIONES HISTÓRICAS SOLO PARA ESTOS 15 CLIENTES
+            const servicios = ['hogar', 'oficina', 'post', 'electro'];
+            let registrosCreados = 0;
+
+            for (let i = 0; i <= 7; i++) { // 7 Meses
+                const cotizDelMes = Math.floor(Math.random() * 6) + 10; // 10 a 15 por mes
+
+                for (let j = 0; j < cotizDelMes; j++) {
+                    const cliObj = clientesGuardados[Math.floor(Math.random() * clientesGuardados.length)];
+                    
                     const fechaCreacion = new Date();
                     fechaCreacion.setMonth(fechaCreacion.getMonth() - i);
                     fechaCreacion.setDate(Math.floor(Math.random() * 28) + 1); 
-                    fechaCreacion.setHours(Math.floor(Math.random() * 8) + 9);
 
                     const fechaAgendada = new Date(fechaCreacion);
                     fechaAgendada.setDate(fechaAgendada.getDate() + Math.floor(Math.random() * 10) + 1);
-                    
                     const [yyyy, mm, dd] = fechaAgendada.toISOString().split('T')[0].split('-');
-                    const horaStr = `${Math.floor(Math.random() * 8) + 9}:00`; 
 
-                    const nombreCliente = nombres[Math.floor(Math.random() * nombres.length)];
                     const servicioSelect = servicios[Math.floor(Math.random() * servicios.length)];
                     
                     let estadoActual = 'Pendiente';
-                    if (i > 0) { 
-                        estadoActual = estadosHistoricos[Math.floor(Math.random() * estadosHistoricos.length)];
-                    } else { 
-                        estadoActual = Math.random() > 0.5 ? 'Pendiente' : 'Aprobada';
-                    }
+                    if (i > 1) { estadoActual = Math.random() > 0.2 ? 'Aprobada' : 'Rechazada'; } 
+                    else if (i === 1) { estadoActual = Math.random() > 0.4 ? 'Aprobada' : 'Pendiente'; } 
+                    else { estadoActual = Math.random() > 0.6 ? 'Pendiente' : 'Aprobada'; }
 
-                    let m2 = 0;
-                    let subtotal = 0;
-                    let personal = 1;
-
+                    let m2 = 0; let subtotal = 0; let personal = 1;
                     if (servicioSelect === 'hogar') { m2 = Math.floor(Math.random() * 80 + 40); subtotal = (1200 * m2); }
                     else if (servicioSelect === 'oficina') { m2 = Math.floor(Math.random() * 200 + 50); subtotal = (1500 * m2); personal = 2; }
                     else if (servicioSelect === 'post') { m2 = Math.floor(Math.random() * 150 + 60); subtotal = (2500 * m2); personal = 3; }
                     else if (servicioSelect === 'electro') { subtotal = 35000; }
 
-                    const iva = Math.round(subtotal * 0.19);
-                    const total = subtotal + iva;
+                    const iva = Math.round(subtotal * 0.19); const total = subtotal + iva;
 
                     const cotizacionRef = await addDoc(collection(db, 'cotizaciones'), {
-                        cliente: nombreCliente,
-                        rut: generarRut(),
-                        correo: `contacto_${j}@mail.com`,
-                        telefono: generarTelefono(),
-                        direccion: 'Temuco Centro',
-                        tipoCliente: Math.random() > 0.6 ? 'Empresa' : 'Persona Natural',
-                        tipoLimpieza: servicioSelect,
-                        fechaAgendada: `${yyyy}-${mm}-${dd}`,
-                        horaAgendada: horaStr,
-                        metros: m2,
-                        personal: personal,
-                        descuento: 0,
+                        clienteId: cliObj.id, cliente: cliObj.nombre, rut: cliObj.rut,
+                        correo: `contacto@${cliObj.tipo === 'Empresa' ? 'empresa.cl' : 'mail.com'}`,
+                        telefono: `+56 9 ${Math.floor(Math.random()*80000000 + 10000000)}`,
+                        direccion: cliObj.dir, tipoCliente: cliObj.tipo, tipoLimpieza: servicioSelect,
+                        fechaAgendada: `${yyyy}-${mm}-${dd}`, horaAgendada: `10:00`,
+                        metros: m2, personal: personal, descuento: 0,
                         prioridad: Math.random() > 0.8 ? 'Alta' : 'Normal',
-                        descripcion: 'Generado automáticamente para prueba histórica.',
-                        valorSubtotal: subtotal,
-                        valorTotal: total,
-                        estadoCRM: estadoActual,
-                        fuente: Math.random() > 0.4 ? 'Modal Web' : 'CRM Interno',
-                        creadoEn: Timestamp.fromDate(fechaCreacion),
-                        modificadoEn: Timestamp.fromDate(fechaCreacion)
+                        descripcion: 'Generado automáticamente. Historial de CRM.',
+                        valorSubtotal: subtotal, valorTotal: total,
+                        estadoCRM: estadoActual, fuente: Math.random() > 0.4 ? 'Modal Web' : 'CRM Interno',
+                        creadoEn: Timestamp.fromDate(fechaCreacion), modificadoEn: Timestamp.fromDate(fechaCreacion)
                     });
                     registrosCreados++;
 
-                    if (Math.random() > 0.7) {
-                         await addDoc(collection(db, 'clientes'), {
-                            nombre: nombreCliente,
-                            rut: generarRut(),
-                            correo: `contacto_${j}@mail.com`,
-                            telefono: generarTelefono(),
-                            direccion: 'Temuco',
-                            fechaRegistro: fechaCreacion.toISOString().split('T')[0],
-                            creadoEn: Timestamp.fromDate(fechaCreacion)
-                        });
-                    }
-
                     if (estadoActual === 'Aprobada') {
                         await addDoc(collection(db, 'citas'), {
-                            cotizacionId: cotizacionRef.id,
-                            clienteNombre: nombreCliente,
-                            servicio: servicioSelect,
-                            fecha: `${yyyy}-${mm}-${dd}`,
-                            hora: horaStr,
-                            estado: 'Agendada'
+                            cotizacionId: cotizacionRef.id, clienteNombre: cliObj.nombre,
+                            servicio: servicioSelect, fecha: `${yyyy}-${mm}-${dd}`,
+                            hora: `10:00`, estado: 'Confirmada'
                         });
                     }
                 }
             }
-            UI.showToast(`¡Carga completada! Se crearon ${registrosCreados} registros.`, 'success');
+            UI.showToast(`¡Éxito! 15 clientes únicos y ${registrosCreados} cotizaciones creadas.`, 'success');
         } catch (error) {
-            console.error("Error en la carga masiva:", error);
-            UI.showToast('Error en la carga de datos', 'error');
+            console.error("Error en limpieza:", error);
+            UI.showToast('Error en la operación', 'error');
         }
     }
 };
@@ -698,91 +686,41 @@ window.DB = {
 // 8. INIT & EVENT LISTENERS
 // ==============================================================
 function setupEventListeners() {
-    // Nav
     document.querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', (e) => { e.preventDefault(); Views.navigate(btn.dataset.view); }));
     document.querySelectorAll('[data-view-target]').forEach(btn => btn.addEventListener('click', (e) => { e.preventDefault(); Views.navigate(btn.dataset.viewTarget); }));
     document.getElementById('sidebar-toggle')?.addEventListener('click', () => document.getElementById('sidebar').classList.toggle('open'));
-    
-    // Dropdowns
     document.getElementById('btn-notifications')?.addEventListener('click', (e) => { e.stopPropagation(); UI.toggleDropdown('dropdown-notifications'); });
     document.getElementById('btn-admin-menu')?.addEventListener('click', (e) => { e.stopPropagation(); UI.toggleDropdown('dropdown-admin'); });
     document.addEventListener('click', (e) => { if (!e.target.closest('.header-user') && !e.target.closest('.header-icon-btn') && !e.target.closest('.dropdown-menu')) document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('active')); });
-
-    // Notificaciones acciones
     document.getElementById('btn-mark-read')?.addEventListener('click', () => { Notifications.markAllRead(); UI.toggleDropdown('dropdown-notifications'); });
-
-    // Buscador Global
-    const globalSearch = document.getElementById('global-search');
-    const searchDropdown = document.getElementById('search-results-dropdown');
-    const searchContent = document.getElementById('search-results-content');
-    
-    globalSearch?.addEventListener('input', (e) => {
-        const val = e.target.value.toLowerCase();
-        if(val.length < 2) { searchDropdown.classList.remove('active'); return; }
-        
-        const resClientes = AppState.clientes.filter(c => c.nombre.toLowerCase().includes(val));
-        const resCot = AppState.cotizaciones.filter(c => (c.cliente||c.nombre||'').toLowerCase().includes(val) || (c.tipoLimpieza||c.servicio||'').toLowerCase().includes(val));
-        
-        let html = '';
-        if(resClientes.length) html += `<div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">Clientes</div>` + resClientes.slice(0,3).map(c => `<div class="search-result-item" onclick="UI.toggleDropdown('search-results-dropdown'); document.querySelector('[data-view-target=\\'clientes\\']').click();"><span class="font-bold text-sm text-slate-800">${Utils.escapeHtml(c.nombre)}</span><span class="text-xs text-slate-500">RUT: ${c.rut}</span></div>`).join('');
-        if(resCot.length) html += `<div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">Cotizaciones</div>` + resCot.slice(0,3).map(c => `<div class="search-result-item" onclick="UI.toggleDropdown('search-results-dropdown'); document.querySelector('[data-view-target=\\'cotizaciones\\']').click();"><span class="font-bold text-sm text-slate-800">${Utils.escapeHtml(Utils.getServicioName(c.tipoLimpieza||c.servicio))}</span><span class="text-xs text-slate-500">${Utils.escapeHtml(c.cliente||c.nombre)} • ${c.estadoCRM}</span></div>`).join('');
-        
-        searchContent.innerHTML = html || `<div class="p-4 text-center text-xs text-slate-500">No se encontraron coincidencias para "${val}"</div>`;
-        searchDropdown.classList.add('active');
-    });
-
-    // Filtros de Tablas (Local)
-    document.getElementById('filter-clientes')?.addEventListener('input', (e) => { const v = e.target.value.toLowerCase(); document.querySelectorAll('#clientes-tbody tr').forEach(tr => tr.style.display = tr.innerText.toLowerCase().includes(v) ? '' : 'none'); });
-    document.getElementById('filter-cotizaciones')?.addEventListener('input', (e) => { const v = e.target.value.toLowerCase(); document.querySelectorAll('#cotizaciones-tbody tr').forEach(tr => tr.style.display = tr.innerText.toLowerCase().includes(v) ? '' : 'none'); });
-
-    // Botones del Modal de Cotización
-    document.getElementById('btn-save-draft')?.addEventListener('click', DB.saveCotizacionDraft);
-    document.getElementById('btn-approve-cotizacion')?.addEventListener('click', DB.approveCotizacion);
-    document.getElementById('btn-reject-cotizacion')?.addEventListener('click', DB.rejectCotizacion);
-    document.getElementById('btn-export-pdf')?.addEventListener('click', () => { UI.showToast('Generando PDF...', 'info'); setTimeout(()=>UI.showToast('PDF Descargado', 'success'), 1500); });
     
     // Formularios Módulos
     document.getElementById('btn-save-cliente')?.addEventListener('click', DB.saveCliente);
-
-    // Refresh Avanzado
+    document.getElementById('btn-save-draft')?.addEventListener('click', DB.saveCotizacionDraft);
+    document.getElementById('btn-approve-cotizacion')?.addEventListener('click', DB.approveCotizacion);
+    document.getElementById('btn-reject-cotizacion')?.addEventListener('click', DB.rejectCotizacion);
+    
     document.getElementById('btn-refresh')?.addEventListener('click', function() {
         if(this.disabled) return;
-        this.disabled = true;
-        document.getElementById('refresh-icon').classList.add('animate-spin');
-        UI.toggleSkeleton(true);
-        setTimeout(() => {
-            Views.renderDashboard(); Views.renderClientes(); Views.renderCotizaciones();
-            UI.toggleSkeleton(false);
-            document.getElementById('refresh-icon').classList.remove('animate-spin');
-            this.disabled = false;
-            UI.showToast('Dashboard sincronizado', 'success');
-        }, 800);
+        this.disabled = true; document.getElementById('refresh-icon').classList.add('animate-spin'); UI.toggleSkeleton(true);
+        setTimeout(() => { Views.renderDashboard(); Views.renderClientes(); Views.renderCotizaciones(); UI.toggleSkeleton(false); document.getElementById('refresh-icon').classList.remove('animate-spin'); this.disabled = false; UI.showToast('Dashboard sincronizado', 'success'); }, 800);
     });
 
-    // Cierre Sesion Visual
     document.getElementById('btn-logout-header')?.addEventListener('click', () => { if(confirm('¿Cerrar sesión?')) window.location.href='login.html'; });
     document.getElementById('btn-logout-sidebar')?.addEventListener('click', () => { if(confirm('¿Cerrar sesión?')) window.location.href='login.html'; });
     
-    // Exponer función de Carga Masiva al objeto Window para llamarla desde la consola
+    // Exponer función de Limpieza y Carga a la consola
     window.ejecutarCargaMasiva = DB.ejecutarCargaMasiva;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Auth Guard
     onAuthStateChanged(auth, (user) => {
-        if (!user) {
-            window.location.href = 'login.html';
-        } else {
+        if (!user) { window.location.href = 'login.html'; } else {
             AppState.user.name = user.email.split('@')[0].toUpperCase();
             document.getElementById('admin-name').textContent = AppState.user.name;
-            
             const dateOpts = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('header-date').textContent = new Date().toLocaleDateString('es-ES', dateOpts);
-
-            Calculator.init();
-            setupEventListeners();
-            DB.initDataListeners(); // Activar listeners de Firebase reales
-            Views.navigate('panel');
+            Calculator.init(); setupEventListeners(); DB.initDataListeners(); Views.navigate('panel');
         }
     });
 });
