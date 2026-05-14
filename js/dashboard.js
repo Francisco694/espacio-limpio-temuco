@@ -23,7 +23,12 @@ const AppState = {
     chartServicios: null,
     chartConversion: null,
     calendarInstance: null,
-    isInitialLoad: true
+    isInitialLoad: true,
+    // NUEVO: Variables de estado para los filtros en tiempo real
+    filtros: {
+        clientes: '',
+        cotizaciones: ''
+    }
 };
 
 // ==============================================================
@@ -387,7 +392,15 @@ const Views = {
         const tbody = document.getElementById('clientes-tbody');
         if(!tbody) return;
 
-        const renderStr = AppState.clientes.map(c => `
+        // APLICAR FILTRO REACTIVO
+        const query = AppState.filtros.clientes;
+        const filtrados = AppState.clientes.filter(c => {
+            if(!query) return true;
+            const textoBusqueda = `${c.nombre||''} ${c.rut||''} ${c.correo||''}`.toLowerCase();
+            return textoBusqueda.includes(query);
+        });
+
+        const renderStr = filtrados.map(c => `
             <tr>
                 <td><div class="client-cell"><div class="client-avatar-sm">${c.nombre.charAt(0)}</div><div><p class="client-name-text">${Utils.escapeHtml(c.nombre)}</p><p class="text-xs text-slate-500">${c.rut}</p></div></div></td>
                 <td><p class="text-sm">${Utils.escapeHtml(c.telefono)}</p><p class="text-xs text-slate-500">${Utils.escapeHtml(c.correo)}</p></td>
@@ -399,7 +412,8 @@ const Views = {
                 </td>
             </tr>
         `).join('');
-        tbody.innerHTML = renderStr || `<tr><td colspan="6"><div class="empty-state"><i data-lucide="users"></i><h3>No hay clientes</h3></div></td></tr>`;
+        
+        tbody.innerHTML = renderStr || `<tr><td colspan="6"><div class="empty-state"><i data-lucide="users"></i><h3>No hay coincidencias</h3></div></td></tr>`;
         
         const select = document.getElementById('cot-cliente-select');
         if(select) select.innerHTML = '<option value="">Seleccione o escriba abajo...</option>' + AppState.clientes.map(c => `<option value="${c.id}">${Utils.escapeHtml(c.nombre)}</option>`).join('');
@@ -409,7 +423,16 @@ const Views = {
     renderCotizaciones() {
         const tbody = document.getElementById('cotizaciones-tbody');
         if(!tbody) return;
-        const renderStr = AppState.cotizaciones.map(c => {
+
+        // APLICAR FILTRO REACTIVO
+        const query = AppState.filtros.cotizaciones;
+        const filtrados = AppState.cotizaciones.filter(c => {
+            if(!query) return true;
+            const textoBusqueda = `${c.cliente||c.nombre||''} ${c.tipoLimpieza||c.servicio||''} ${c.estadoCRM||''}`.toLowerCase();
+            return textoBusqueda.includes(query);
+        });
+
+        const renderStr = filtrados.map(c => {
             const isWeb = c.fuente === 'Modal Web';
             const valTotal = c.valorTotal ? Utils.formatCLP(c.valorTotal) : (c.valorCotizado || '$ 0');
             const subtotal = c.valorSubtotal ? Utils.formatCLP(c.valorSubtotal) : '—';
@@ -425,7 +448,8 @@ const Views = {
                 <td><span class="estado-badge ${UI.getBadgeClass(c.estadoCRM)}">${c.estadoCRM || 'Pendiente'}</span></td>
             </tr>
         `}).join('');
-        tbody.innerHTML = renderStr || `<tr><td colspan="7"><div class="empty-state"><i data-lucide="file-text"></i><h3>Sin cotizaciones</h3></div></td></tr>`;
+        
+        tbody.innerHTML = renderStr || `<tr><td colspan="7"><div class="empty-state"><i data-lucide="search-x"></i><h3>No hay coincidencias</h3></div></td></tr>`;
         if(window.lucide) lucide.createIcons();
     },
 
@@ -560,7 +584,7 @@ window.DB = {
     async deleteCliente(id) { if(confirm('¿Eliminar cliente permanentemente?')) { await deleteDoc(doc(db, 'clientes', id)); UI.showToast('Eliminado', 'info'); } },
     async deleteCotizacion(id) { if(confirm('¿Eliminar cotización permanentemente?')) { await deleteDoc(doc(db, 'cotizaciones', id)); UI.showToast('Eliminado', 'info'); } },
     
-    // --- NUEVO GENERADOR: BORRA TODO Y CREA 15 CLIENTES ÚNICOS SIN REPETIR ---
+    // --- GENERADOR/LIMPIADOR ---
     async ejecutarCargaMasiva() {
         const authKey = prompt('ESTO BORRARÁ TODO y creará datos limpios sin repetir. Escriba "LIMPIAR" para confirmar:');
         if (authKey !== 'LIMPIAR') return UI.showToast('Operación cancelada.', 'info');
@@ -568,7 +592,6 @@ window.DB = {
         UI.showToast('Limpiando base de datos... Por favor espere.', 'info');
         
         try {
-            // 1. ELIMINAR DATOS BASURA ACTUALES
             const colecciones = ['cotizaciones', 'clientes', 'citas'];
             for (const colName of colecciones) {
                 const snapshot = await getDocs(collection(db, colName));
@@ -576,12 +599,11 @@ window.DB = {
                 snapshot.forEach(docSnap => {
                     promesas.push(deleteDoc(doc(db, colName, docSnap.id)));
                 });
-                await Promise.all(promesas); // Borra todo de golpe
+                await Promise.all(promesas); 
             }
 
             UI.showToast('Base de datos vacía. Generando nuevos registros...', 'info');
 
-            // 2. CREAR EXACTAMENTE 15 CLIENTES ÚNICOS
             const clientesBase = [
                 { nombre: 'Constructora Sur', rut: '76.123.456-K', tipo: 'Empresa', dir: 'Av. Alemania 123' },
                 { nombre: 'Juan Pérez', rut: '15.432.123-5', tipo: 'Persona Natural', dir: 'Los Pablos 456' },
@@ -617,12 +639,11 @@ window.DB = {
                 clientesGuardados.push({ id: docRef.id, ...c });
             }
 
-            // 3. GENERAR COTIZACIONES HISTÓRICAS SOLO PARA ESTOS 15 CLIENTES
             const servicios = ['hogar', 'oficina', 'post', 'electro'];
             let registrosCreados = 0;
 
-            for (let i = 0; i <= 7; i++) { // 7 Meses
-                const cotizDelMes = Math.floor(Math.random() * 6) + 10; // 10 a 15 por mes
+            for (let i = 0; i <= 7; i++) { 
+                const cotizDelMes = Math.floor(Math.random() * 6) + 10; 
 
                 for (let j = 0; j < cotizDelMes; j++) {
                     const cliObj = clientesGuardados[Math.floor(Math.random() * clientesGuardados.length)];
@@ -694,6 +715,37 @@ function setupEventListeners() {
     document.addEventListener('click', (e) => { if (!e.target.closest('.header-user') && !e.target.closest('.header-icon-btn') && !e.target.closest('.dropdown-menu')) document.querySelectorAll('.dropdown-menu').forEach(d => d.classList.remove('active')); });
     document.getElementById('btn-mark-read')?.addEventListener('click', () => { Notifications.markAllRead(); UI.toggleDropdown('dropdown-notifications'); });
     
+    // --- FILTROS REACTIVOS CORREGIDOS (Vinculados al State Global) ---
+    document.getElementById('filter-clientes')?.addEventListener('input', (e) => { 
+        AppState.filtros.clientes = e.target.value.toLowerCase(); 
+        Views.renderClientes(); 
+    });
+    document.getElementById('filter-cotizaciones')?.addEventListener('input', (e) => { 
+        AppState.filtros.cotizaciones = e.target.value.toLowerCase(); 
+        Views.renderCotizaciones(); 
+    });
+    // ----------------------------------------------------------------
+
+    // Buscador Global
+    const globalSearch = document.getElementById('global-search');
+    const searchDropdown = document.getElementById('search-results-dropdown');
+    const searchContent = document.getElementById('search-results-content');
+    
+    globalSearch?.addEventListener('input', (e) => {
+        const val = e.target.value.toLowerCase();
+        if(val.length < 2) { searchDropdown.classList.remove('active'); return; }
+        
+        const resClientes = AppState.clientes.filter(c => c.nombre.toLowerCase().includes(val));
+        const resCot = AppState.cotizaciones.filter(c => (c.cliente||c.nombre||'').toLowerCase().includes(val) || (c.tipoLimpieza||c.servicio||'').toLowerCase().includes(val));
+        
+        let html = '';
+        if(resClientes.length) html += `<div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">Clientes</div>` + resClientes.slice(0,3).map(c => `<div class="search-result-item" onclick="UI.toggleDropdown('search-results-dropdown'); document.querySelector('[data-view-target=\\'clientes\\']').click();"><span class="font-bold text-sm text-slate-800">${Utils.escapeHtml(c.nombre)}</span><span class="text-xs text-slate-500">RUT: ${c.rut}</span></div>`).join('');
+        if(resCot.length) html += `<div class="px-3 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider bg-slate-50">Cotizaciones</div>` + resCot.slice(0,3).map(c => `<div class="search-result-item" onclick="UI.toggleDropdown('search-results-dropdown'); document.querySelector('[data-view-target=\\'cotizaciones\\']').click();"><span class="font-bold text-sm text-slate-800">${Utils.escapeHtml(Utils.getServicioName(c.tipoLimpieza||c.servicio))}</span><span class="text-xs text-slate-500">${Utils.escapeHtml(c.cliente||c.nombre)} • ${c.estadoCRM}</span></div>`).join('');
+        
+        searchContent.innerHTML = html || `<div class="p-4 text-center text-xs text-slate-500">No se encontraron coincidencias para "${val}"</div>`;
+        searchDropdown.classList.add('active');
+    });
+
     // Formularios Módulos
     document.getElementById('btn-save-cliente')?.addEventListener('click', DB.saveCliente);
     document.getElementById('btn-save-draft')?.addEventListener('click', DB.saveCotizacionDraft);
@@ -709,7 +761,7 @@ function setupEventListeners() {
     document.getElementById('btn-logout-header')?.addEventListener('click', () => { if(confirm('¿Cerrar sesión?')) window.location.href='login.html'; });
     document.getElementById('btn-logout-sidebar')?.addEventListener('click', () => { if(confirm('¿Cerrar sesión?')) window.location.href='login.html'; });
     
-    // Exponer función de Limpieza y Carga a la consola
+    // Exponer función de Limpieza
     window.ejecutarCargaMasiva = DB.ejecutarCargaMasiva;
 }
 
