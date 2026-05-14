@@ -13,21 +13,14 @@
 
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
 
     <script>
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        primary:   '#2563eb',
-                        secondary: '#3b82f6',
-                        dark:      '#0f172a',
-                        slate50:   '#f8fafc',
-                    },
-                    fontFamily: {
-                        display: ['Syne', 'sans-serif'],
-                        body:    ['DM Sans', 'sans-serif'],
-                    },
+                    colors: { primary: '#2563eb', secondary: '#3b82f6', dark: '#0f172a', slate50: '#f8fafc' },
+                    fontFamily: { display: ['Syne', 'sans-serif'], body: ['DM Sans', 'sans-serif'] },
                 }
             }
         }
@@ -39,7 +32,7 @@
 <body class="font-body dashboard-body">
 <div class="dashboard-layout">
 
-    <!-- SIDEBAR (Slate Oscuro) -->
+    <!-- SIDEBAR -->
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-brand">
             <div class="sidebar-logo">EL</div>
@@ -55,7 +48,7 @@
                 <li><button class="sidebar-nav-item active" data-view="panel"><i data-lucide="layout-dashboard" class="nav-icon"></i><span>Panel Principal</span></button></li>
                 <li><button class="sidebar-nav-item" data-view="clientes"><i data-lucide="users" class="nav-icon"></i><span>Clientes</span></button></li>
                 <li><button class="sidebar-nav-item" data-view="agendamiento"><i data-lucide="calendar-check" class="nav-icon"></i><span>Agendamiento</span></button></li>
-                <li><button class="sidebar-nav-item" data-view="cotizaciones"><i data-lucide="file-text" class="nav-icon"></i><span>Cotizaciones</span><span class="nav-dot"></span></button></li>
+                <li><button class="sidebar-nav-item" data-view="cotizaciones"><i data-lucide="file-text" class="nav-icon"></i><span>Cotizaciones</span><span class="nav-dot" id="menu-cotiz-dot"></span></button></li>
                 <li><button class="sidebar-nav-item" data-view="reportes"><i data-lucide="bar-chart-3" class="nav-icon"></i><span>Reportes</span></button></li>
             </ul>
         </nav>
@@ -63,7 +56,7 @@
             <span class="sidebar-nav-label">Configuración</span>
             <ul class="sidebar-nav-list">
                 <li><button class="sidebar-nav-item" data-view="ajustes"><i data-lucide="settings" class="nav-icon"></i><span>Ajustes</span></button></li>
-                <li><button class="sidebar-nav-item sidebar-logout" data-view="logout"><i data-lucide="log-out" class="nav-icon"></i><span>Cerrar Sesión</span></button></li>
+                <li><button class="sidebar-nav-item sidebar-logout" id="btn-logout-sidebar"><i data-lucide="log-out" class="nav-icon"></i><span>Cerrar Sesión</span></button></li>
             </ul>
         </nav>
         <div class="sidebar-footer">
@@ -73,132 +66,358 @@
     </aside>
 
     <div class="main-wrapper">
-        <!-- HEADER (Blanco) -->
+        <!-- HEADER -->
         <header class="dashboard-header">
             <div class="header-left">
                 <button id="sidebar-toggle" class="sidebar-toggle-btn"><i data-lucide="menu" class="w-5 h-5"></i></button>
                 <div>
                     <h1 id="header-title" class="header-title">Panel Principal</h1>
-                    <p class="header-subtitle"><span id="header-date"></span></p>
+                    <p class="header-subtitle"><span id="header-date">Cargando...</span></p>
                 </div>
             </div>
-            <div class="header-right">
+            
+            <div class="header-right relative">
+                <!-- Buscador Global -->
                 <div class="header-search">
                     <i data-lucide="search" class="search-icon"></i>
-                    <input type="text" id="search-input" placeholder="Buscar registros..." class="search-input" />
+                    <input type="text" id="global-search" placeholder="Buscar registros..." class="search-input" autocomplete="off" />
+                    <!-- Dropdown de Resultados Búsqueda -->
+                    <div id="search-results-dropdown" class="dropdown-menu bg-white border border-slate-200 rounded-xl shadow-xl py-2 max-h-80 overflow-y-auto">
+                        <div id="search-results-content">
+                            <div class="p-4 text-center text-xs text-slate-500">Escribe para buscar clientes o cotizaciones...</div>
+                        </div>
+                    </div>
                 </div>
-                <button class="header-icon-btn"><i data-lucide="bell" class="w-4 h-4"></i><span class="notif-dot"></span></button>
-                <button id="btn-refresh" class="header-icon-btn"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
-                <div class="header-user">
-                    <div class="user-avatar">A</div>
-                    <div class="user-info">
-                        <span class="user-name">Admin</span>
-                        <span class="user-role">Espacio Limpio</span>
+
+                <!-- Notificaciones -->
+                <div class="relative">
+                    <button id="btn-notifications" class="header-icon-btn">
+                        <i data-lucide="bell" class="w-4 h-4"></i>
+                        <span id="notif-badge" class="notif-dot"></span>
+                    </button>
+                    <!-- Dropdown Notificaciones -->
+                    <div id="dropdown-notifications" class="dropdown-menu right-0 top-full mt-2 w-80 bg-white border border-slate-200 rounded-xl shadow-xl py-1">
+                        <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-xl">
+                            <h3 class="font-bold text-slate-800 text-sm">Notificaciones</h3>
+                            <button id="btn-mark-read" class="text-xs text-blue-600 hover:underline font-medium">Marcar leídas</button>
+                        </div>
+                        <div id="notif-list" class="max-h-64 overflow-y-auto">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botón Actualizar -->
+                <button id="btn-refresh" class="header-icon-btn" title="Actualizar Dashboard"><i id="refresh-icon" data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                
+                <!-- Usuario Admin -->
+                <div class="relative">
+                    <div id="btn-admin-menu" class="header-user">
+                        <div class="user-avatar">A</div>
+                        <div class="user-info">
+                            <span class="user-name" id="admin-name">Admin</span>
+                            <span class="user-role">Espacio Limpio</span>
+                        </div>
+                    </div>
+                    <!-- Dropdown Admin -->
+                    <div id="dropdown-admin" class="dropdown-menu right-0 top-full mt-2 w-48 bg-white border border-slate-200 rounded-xl shadow-xl py-2">
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition" data-view-target="ajustes"><i data-lucide="user" class="w-4 h-4"></i> Mi Perfil</button>
+                        <button class="w-full text-left px-4 py-2 text-sm text-slate-700 hover:bg-slate-50 flex items-center gap-2 transition" data-view-target="ajustes"><i data-lucide="settings" class="w-4 h-4"></i> Configuración</button>
+                        <div class="my-1 border-t border-slate-100"></div>
+                        <button id="btn-logout-header" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition font-medium"><i data-lucide="log-out" class="w-4 h-4"></i> Cerrar Sesión</button>
                     </div>
                 </div>
             </div>
         </header>
 
         <main class="main-content" id="main-content">
+            
             <!-- VISTA: PANEL PRINCIPAL -->
             <section id="view-panel" class="view active">
                 <div class="kpi-grid">
                     <div class="kpi-card">
                         <div class="kpi-icon-wrap"><i data-lucide="users" class="kpi-icon"></i></div>
-                        <div class="kpi-data"><span class="kpi-value" id="kpi-total-clientes">—</span><span class="kpi-label">Total Clientes</span></div>
+                        <div class="kpi-data"><span class="kpi-value" data-kpi="clientes">0</span><span class="kpi-label">Total Clientes</span></div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-icon-wrap"><i data-lucide="calendar" class="kpi-icon"></i></div>
-                        <div class="kpi-data"><span class="kpi-value" id="kpi-citas-hoy">—</span><span class="kpi-label">Citas Hoy</span></div>
+                        <div class="kpi-data"><span class="kpi-value" data-kpi="citas">0</span><span class="kpi-label">Citas Hoy</span></div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-icon-wrap"><i data-lucide="file-text" class="kpi-icon"></i></div>
-                        <div class="kpi-data"><span class="kpi-value" id="kpi-pendientes">—</span><span class="kpi-label">Pendientes</span></div>
+                        <div class="kpi-data"><span class="kpi-value" data-kpi="pendientes">0</span><span class="kpi-label">Cotiz. Pendientes</span></div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-icon-wrap"><i data-lucide="sparkles" class="kpi-icon"></i></div>
-                        <div class="kpi-data"><span class="kpi-value" id="kpi-reservas-semana">—</span><span class="kpi-label">Reservas Semanales</span></div>
+                        <div class="kpi-icon-wrap"><i data-lucide="dollar-sign" class="kpi-icon"></i></div>
+                        <div class="kpi-data"><span class="kpi-value text-xl" data-kpi="ingresos">$0</span><span class="kpi-label">Ingresos Mensuales</span></div>
                     </div>
                 </div>
 
                 <div class="dashboard-grid">
-                    <div class="charts-panel glass-panel">
+                    <div class="charts-panel glass-panel relative">
                         <div class="panel-header">
                             <div class="panel-title-group"><i data-lucide="bar-chart-2" class="panel-title-icon"></i><h2 class="panel-title">Análisis de Ingresos</h2></div>
-                            <div class="chart-tabs">
-                                <button class="chart-tab active" data-chart="bar">Mensual</button>
-                                <button class="chart-tab" data-chart="line">Tendencia</button>
-                            </div>
                         </div>
-                        <div class="chart-summary">
-                            <div class="chart-summary-item"><span class="chart-summary-label">Total Proyectado</span><span class="chart-summary-value" id="valor-total-cotizado">$ —</span></div>
-                            <div class="chart-summary-item"><span class="chart-summary-label">Ticket Promedio</span><span class="chart-summary-value" id="valor-promedio">$ —</span></div>
-                        </div>
-                        <div id="chart-bar-wrap" class="chart-wrap"><canvas id="chart-ventas"></canvas></div>
-                        <div id="chart-line-wrap" class="chart-wrap hidden"><canvas id="chart-tendencia"></canvas></div>
+                        <div class="chart-wrap"><canvas id="chart-ventas"></canvas></div>
                     </div>
 
                     <div class="alerts-panel glass-panel">
                         <div class="panel-header">
-                            <div class="panel-title-group"><i data-lucide="zap" class="panel-title-icon"></i><h2 class="panel-title">Actividad</h2></div>
+                            <div class="panel-title-group"><i data-lucide="zap" class="panel-title-icon"></i><h2 class="panel-title">Actividad Reciente</h2></div>
                         </div>
-                        <div id="alerts-feed" class="alerts-feed">
-                            <!-- JS Inject -->
-                        </div>
+                        <div id="alerts-feed" class="alerts-feed"></div>
                     </div>
                 </div>
 
                 <div class="bottom-grid">
                     <div class="table-panel glass-panel">
                         <div class="panel-header">
-                            <div class="panel-title-group"><i data-lucide="table-2" class="panel-title-icon"></i><h2 class="panel-title">Registro de Solicitudes</h2></div>
-                            <div class="table-controls">
-                                <span class="table-count" id="table-count">0 registros</span>
-                                <button id="btn-export" class="btn-export"><i data-lucide="download" class="w-3.5 h-3.5"></i> Exportar</button>
-                            </div>
+                            <div class="panel-title-group"><i data-lucide="table-2" class="panel-title-icon"></i><h2 class="panel-title">Últimas Solicitudes (Web y Manuales)</h2></div>
+                            <button class="text-sm text-blue-600 font-medium hover:underline" data-view-target="cotizaciones">Ver todas</button>
                         </div>
                         <div class="table-scroll-wrap">
                             <table class="crm-table">
-                                <thead>
-                                    <tr>
-                                        <th>Cliente</th>
-                                        <th>Servicio</th>
-                                        <th>Contacto</th>
-                                        <th>Fecha Programada</th>
-                                        <th>Valor (CLP)</th>
-                                        <th>Estado</th>
-                                        <th style="text-align: center;">Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="clientes-tbody">
-                                    <tr><td colspan="7" style="text-align:center; padding: 24px; color: #94a3b8;"><i data-lucide="loader-2" class="animate-spin inline w-4 h-4"></i> Cargando...</td></tr>
-                                </tbody>
+                                <thead><tr><th>Cliente</th><th>Servicio</th><th>Contacto</th><th>Fecha</th><th>Valor</th><th>Estado</th></tr></thead>
+                                <tbody id="recent-quotes-tbody"></tbody>
                             </table>
                         </div>
                     </div>
-
+                    
                     <div class="timeline-panel glass-panel">
                         <div class="panel-header">
                             <div class="panel-title-group"><i data-lucide="git-branch" class="panel-title-icon"></i><h2 class="panel-title">Timeline</h2></div>
                         </div>
-                        <div id="timeline-feed" class="timeline-feed">
-                            <!-- JS Inject -->
-                        </div>
+                        <div id="timeline-feed" class="timeline-feed"></div>
                     </div>
                 </div>
             </section>
 
-            <!-- VISTAS PLACEHOLDER -->
-            <section id="view-clientes" class="view"><div class="view-placeholder glass-panel"><i data-lucide="users" class="placeholder-icon"></i><h2 class="placeholder-title">Módulo de Clientes</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
-            <section id="view-agendamiento" class="view"><div class="view-placeholder glass-panel"><i data-lucide="calendar-check" class="placeholder-icon"></i><h2 class="placeholder-title">Agendamiento</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
-            <section id="view-cotizaciones" class="view"><div class="view-placeholder glass-panel"><i data-lucide="file-text" class="placeholder-icon"></i><h2 class="placeholder-title">Cotizaciones</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
-            <section id="view-reportes" class="view"><div class="view-placeholder glass-panel"><i data-lucide="bar-chart-3" class="placeholder-icon"></i><h2 class="placeholder-title">Reportes</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
-            <section id="view-ajustes" class="view"><div class="view-placeholder glass-panel"><i data-lucide="settings" class="placeholder-icon"></i><h2 class="placeholder-title">Ajustes</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
+            <!-- VISTA: CLIENTES -->
+            <section id="view-clientes" class="view">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div><h2 class="panel-title">Directorio de Clientes</h2><p class="text-sm text-slate-500 mt-1">Gestión de base de datos y CRM.</p></div>
+                        <div class="flex gap-3">
+                            <div class="relative"><i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-400"></i><input type="text" id="filter-clientes" placeholder="Filtrar clientes..." class="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500" /></div>
+                            <button onclick="Controllers.newCliente()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm"><i data-lucide="user-plus" class="w-4 h-4"></i> Nuevo Cliente</button>
+                        </div>
+                    </div>
+                    <div class="table-scroll-wrap"><table class="crm-table"><thead><tr><th>Cliente</th><th>Contacto</th><th>Dirección</th><th>Registro</th><th>Estado</th><th class="text-center">Acciones</th></tr></thead><tbody id="clientes-tbody"></tbody></table></div>
+                </div>
+            </section>
+
+            <!-- VISTA: AGENDAMIENTO (FullCalendar) -->
+            <section id="view-agendamiento" class="view">
+                <div class="glass-panel p-6">
+                    <div class="flex justify-between items-center mb-6">
+                        <div><h2 class="panel-title text-lg">Calendario Operativo</h2><p class="text-sm text-slate-500">Visualiza los servicios agendados. (Sincronizado al aprobar cotizaciones)</p></div>
+                    </div>
+                    <div id="calendar-container" style="min-height: 600px;"></div>
+                </div>
+            </section>
+
+            <!-- VISTA: COTIZACIONES -->
+            <section id="view-cotizaciones" class="view">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div><h2 class="panel-title">Gestión de Cotizaciones</h2><p class="text-sm text-slate-500 mt-1">Evalúa, aprueba y convierte solicitudes en citas reales. Clic para abrir.</p></div>
+                        <div class="flex gap-3">
+                            <div class="relative"><i data-lucide="search" class="absolute left-3 top-2.5 w-4 h-4 text-slate-400"></i><input type="text" id="filter-cotizaciones" placeholder="Filtrar cotizaciones..." class="pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm outline-none focus:border-blue-500" /></div>
+                            <button onclick="Controllers.newCotizacion()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm"><i data-lucide="plus" class="w-4 h-4"></i> Nueva Cotización Manual</button>
+                        </div>
+                    </div>
+                    <div class="table-scroll-wrap"><table class="crm-table"><thead><tr><th>Cliente</th><th>Servicio</th><th>Fecha Agendada</th><th>Prioridad</th><th>Subtotal</th><th>Total (CLP)</th><th>Estado</th></tr></thead><tbody id="cotizaciones-tbody"></tbody></table></div>
+                </div>
+            </section>
+
+            <!-- VISTA: REPORTES -->
+            <section id="view-reportes" class="view">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-slate-800"><i data-lucide="pie-chart" class="inline w-5 h-5 mr-2 text-blue-600"></i>Servicios más Solicitados</h3>
+                        </div>
+                        <div class="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-slate-100 border-dashed text-slate-400 text-sm">Gráfico en desarrollo</div>
+                    </div>
+                    <div class="glass-panel p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h3 class="font-bold text-slate-800"><i data-lucide="trending-up" class="inline w-5 h-5 mr-2 text-green-600"></i>Tasa de Conversión</h3>
+                        </div>
+                        <div class="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-slate-100 border-dashed text-slate-400 text-sm">Métricas en desarrollo</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VISTA: AJUSTES -->
+            <section id="view-ajustes" class="view">
+                <div class="glass-panel p-8 max-w-3xl mx-auto w-full">
+                    <h2 class="panel-title text-xl mb-8 border-b border-slate-100 pb-4">Configuración del CRM</h2>
+                    <form class="space-y-8">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="building" class="w-4 h-4 text-blue-600"></i> Perfil de Empresa</h3>
+                            <div class="grid grid-cols-2 gap-5">
+                                <div class="input-group"><label>Nombre Comercial</label><input type="text" value="Espacio Limpio" class="modern-input" readonly></div>
+                                <div class="input-group"><label>RUT Empresa</label><input type="text" value="76.123.456-7" class="modern-input" readonly></div>
+                                <div class="input-group"><label>Correo Principal</label><input type="email" value="contacto@espaciolimpio.cl" class="modern-input"></div>
+                                <div class="input-group"><label>Teléfono Contacto</label><input type="text" value="+56 9 1234 5678" class="modern-input"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="plug" class="w-4 h-4 text-blue-600"></i> Integraciones</h3>
+                            <div class="flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-slate-50">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-600 border border-slate-100"><i data-lucide="calendar" class="w-5 h-5"></i></div>
+                                    <div><p class="font-bold text-sm text-slate-800">Google Calendar</p><p class="text-xs text-slate-500">Sincronización bidireccional (Próximamente)</p></div>
+                                </div>
+                                <button type="button" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold rounded-lg shadow-sm transition">Conectar API</button>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-slate-100 flex justify-end">
+                            <button type="button" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition" onclick="UI.showToast('Configuración guardada')">Guardar Cambios</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
         </main>
     </div>
 </div>
 
-<script type="module" src="js/db-config.js"></script>
+<!-- =========================================================
+     MODALES GLOBALES (Backdrop Blur & Bloqueo)
+     ========================================================= -->
+
+<!-- Modal Nuevo Cliente -->
+<div id="modal-cliente" class="modal-overlay">
+    <!-- El onclick.stopPropagation() evita que se cierre haciendo click adentro -->
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="font-bold text-lg text-slate-800">Registrar Cliente</h3>
+            <button onclick="UI.closeModal('modal-cliente')" class="text-slate-400 hover:text-slate-600 transition"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="form-cliente" class="space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-group col-span-2"><label>Nombre Completo / Empresa *</label><input type="text" id="cli-nombre" required class="modern-input"></div>
+                    <div class="input-group"><label>RUT *</label><input type="text" id="cli-rut" required placeholder="12.345.678-9" class="modern-input"></div>
+                    <div class="input-group"><label>Teléfono *</label><input type="text" id="cli-telefono" required placeholder="+56 9..." class="modern-input"></div>
+                    <div class="input-group col-span-2"><label>Correo *</label><input type="email" id="cli-correo" required class="modern-input"></div>
+                    <div class="input-group col-span-2"><label>Dirección (Opcional)</label><input type="text" id="cli-direccion" class="modern-input"></div>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button onclick="UI.closeModal('modal-cliente')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">Cancelar</button>
+            <button id="btn-save-cliente" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition">Guardar Cliente</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Gestión / Nueva Cotización (Cálculo Automático) -->
+<div id="modal-cotizacion" class="modal-overlay">
+    <div class="modal-content large" onclick="event.stopPropagation()">
+        <div class="modal-header bg-slate-50">
+            <div>
+                <h3 class="font-bold text-lg text-slate-800" id="cot-modal-title">Detalle de Cotización</h3>
+                <p class="text-xs font-semibold text-blue-600 mt-1" id="cot-modal-source">Origen: Carga Manual</p>
+            </div>
+            <button onclick="UI.closeModal('modal-cotizacion')" class="text-slate-400 hover:text-slate-600 transition"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="form-cotizacion" class="space-y-6">
+                <input type="hidden" id="cot-id">
+
+                <!-- 1. Cliente -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><i data-lucide="user" class="w-4 h-4"></i> Datos del Cliente</h4>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="input-group col-span-2 sm:col-span-1"><label>Nombre</label><input type="text" id="cot-nombre" required class="modern-input"></div>
+                        <div class="input-group"><label>RUT</label><input type="text" id="cot-rut" class="modern-input"></div>
+                        <div class="input-group"><label>Teléfono</label><input type="text" id="cot-telefono" required class="modern-input"></div>
+                        <div class="input-group"><label>Correo</label><input type="email" id="cot-correo" class="modern-input"></div>
+                        <div class="input-group col-span-2"><label>Dirección</label><input type="text" id="cot-direccion" class="modern-input"></div>
+                        
+                        <div class="input-group col-span-2">
+                            <label>Tipo de Cliente</label>
+                            <select id="cot-tipoCliente" class="modern-input cursor-pointer">
+                                <option value="Persona Natural">Persona Natural</option>
+                                <option value="Empresa">Empresa</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. Servicio -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-4 flex items-center gap-2"><i data-lucide="briefcase" class="w-4 h-4"></i> Detalles de la Solicitud</h4>
+                    <div class="grid grid-cols-3 gap-4">
+                        <div class="input-group col-span-3 sm:col-span-1">
+                            <label>Tipo de Limpieza *</label>
+                            <select id="cot-servicio" required class="modern-input cursor-pointer calc-trigger">
+                                <option value="hogar">Limpieza de Hogar Profunda (Base $20.000)</option>
+                                <option value="oficina">Limpieza de Oficinas (Base $35.000)</option>
+                                <option value="post">Limpieza Post-Construcción (Base $80.000)</option>
+                                <option value="electro">Hornos / Electrodomésticos (Fijo $35.000)</option>
+                            </select>
+                        </div>
+                        <div class="input-group"><label>Fecha Requerida *</label><input type="date" id="cot-fecha" required class="modern-input"></div>
+                        <div class="input-group"><label>Hora *</label><input type="time" id="cot-hora" required class="modern-input"></div>
+                        
+                        <!-- Calculadora Interna -->
+                        <div class="input-group"><label>Metros Cuadrados (m2)</label><input type="number" id="cot-m2" value="0" min="0" class="modern-input calc-trigger"></div>
+                        <div class="input-group"><label>Personal Requerido</label><input type="number" id="cot-personal" value="1" min="1" max="10" class="modern-input calc-trigger"></div>
+                        <div class="input-group">
+                            <label>Prioridad</label>
+                            <select id="cot-prioridad" class="modern-input cursor-pointer">
+                                <option value="Normal">Normal</option>
+                                <option value="Alta">Alta</option>
+                                <option value="Urgente">Urgente</option>
+                            </select>
+                        </div>
+
+                        <div class="input-group col-span-3">
+                            <label>Mensaje Adicional del Cliente</label>
+                            <textarea id="cot-descripcion" rows="2" class="modern-input" placeholder="Detalles de la solicitud web..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Resumen Costos -->
+                <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-inner">
+                    <h4 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-3">Cotización Económica</h4>
+                    <div class="space-y-2 text-sm text-slate-700">
+                        <div class="flex justify-between items-center">
+                            <span>Descuento Especial ($)</span>
+                            <input type="number" id="cot-descuento" value="0" min="0" class="modern-input w-32 text-right calc-trigger">
+                        </div>
+                        <div class="flex justify-between mt-2 pt-2 border-t border-slate-200"><span>Subtotal Calculado</span><span id="label-subtotal" class="font-medium">$ 0</span></div>
+                        <div class="flex justify-between text-xs text-slate-500"><span>IVA (19%)</span><span id="label-iva">$ 0</span></div>
+                        <div class="border-t border-slate-200 my-2 pt-3 flex justify-between items-center">
+                            <span class="font-bold text-slate-800">Total a Cobrar (CLP)</span>
+                            <input type="number" id="cot-valor-total" class="modern-input w-40 text-right font-display font-bold text-lg text-blue-700 bg-white shadow-sm" readonly>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+        <!-- Controles de Flujo de Cotización -->
+        <div class="modal-footer bg-slate-50">
+            <div class="flex gap-2">
+                <button id="btn-reject-cotizacion" class="px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition border border-red-200 bg-white hidden">Rechazar</button>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="UI.closeModal('modal-cotizacion')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">Cerrar</button>
+                <button id="btn-save-draft" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-medium rounded-lg transition">Guardar Borrador</button>
+                <button id="btn-export-pdf" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-sm font-medium rounded-lg transition shadow-sm hidden"><i data-lucide="download" class="w-4 h-4 inline mr-1"></i> PDF</button>
+                <button id="btn-approve-cotizacion" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-lg transition shadow-md flex items-center gap-2 hidden"><i data-lucide="check-circle" class="w-4 h-4"></i> Aprobar y Agendar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenedor Toasts -->
+<div id="toast-container"></div>
+
+<!-- Lógica JavaScript Core -->
 <script type="module" src="js/dashboard.js"></script>
 <script>document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });</script>
 </body>
