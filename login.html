@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Acceso Administrador — Espacio Limpio CRM</title>
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts: Syne (display) + DM Sans (body) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <!-- Lucide Icons via CDN -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+    <!-- Tailwind Config with Corporate Blue/Slate -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary:   '#2563eb', // Blue 600
+                        secondary: '#3b82f6', // Blue 500
+                        dark:      '#0f172a', // Slate 900
+                        light:     '#ffffff', // White
+                        slate50:   '#f8fafc',
+                    },
+                    fontFamily: {
+                        display: ['Syne', 'sans-serif'],
+                        body:    ['DM Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body class="font-body bg-slate50 text-slate-800 antialiased min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+
+    <!-- Elementos decorativos sutiles de fondo -->
+    <div class="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-blue-100 rounded-full mix-blend-multiply filter blur-[100px] opacity-40 pointer-events-none"></div>
+    <div class="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-indigo-100 rounded-full mix-blend-multiply filter blur-[80px] opacity-40 pointer-events-none"></div>
+
+    <!-- Contenedor Principal del Login -->
+    <div class="w-full max-w-md relative z-10">
+        
+        <!-- Logo y Título -->
+        <div class="text-center mb-8">
+            <div class="inline-flex items-center justify-center w-14 h-14 bg-primary text-white rounded-xl font-display font-extrabold text-2xl shadow-lg shadow-blue-600/20 mb-4">
+                EL
+            </div>
+            <h1 class="font-display font-bold text-2xl text-slate-900 mb-1 tracking-tight">Acceso Administrador</h1>
+            <p class="text-sm text-slate-500">Ingresa tus credenciales para acceder al CRM.</p>
+        </div>
+
+        <!-- Tarjeta de Login (SaaS Style) -->
+        <div class="bg-white rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-200 p-8">
+            
+            <form id="login-form" class="space-y-5" novalidate>
+                
+                <!-- Correo Electrónico -->
+                <div>
+                    <label for="email" class="block text-xs font-semibold text-slate-600 mb-1.5">Correo Electrónico</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i data-lucide="mail" class="w-4 h-4 text-slate-400"></i>
+                        </div>
+                        <input 
+                            type="email" 
+                            id="email" 
+                            name="email" 
+                            placeholder="admin@espaciolimpio.cl" 
+                            class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <!-- Contraseña -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label for="password" class="block text-xs font-semibold text-slate-600">Contraseña</label>
+                        <a href="#" class="text-xs font-medium text-primary hover:text-blue-700 transition-colors">¿Olvidaste tu contraseña?</a>
+                    </div>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i data-lucide="lock" class="w-4 h-4 text-slate-400"></i>
+                        </div>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password" 
+                            placeholder="••••••••" 
+                            class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all"
+                            required
+                        />
+                    </div>
+                </div>
+
+                <!-- Mensaje de Error (Oculto por defecto) -->
+                <div id="login-error" class="hidden bg-red-50 border border-red-200 text-red-600 text-xs px-4 py-3 rounded-lg flex items-start gap-2">
+                    <i data-lucide="alert-circle" class="w-4 h-4 flex-shrink-0 mt-0.5"></i>
+                    <span>Credenciales incorrectas. Por favor, intenta nuevamente.</span>
+                </div>
+
+                <!-- Botón Submit -->
+                <button 
+                    type="submit" 
+                    id="btn-login"
+                    class="w-full bg-primary hover:bg-blue-700 text-white font-bold text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm hover:shadow-md hover:-translate-y-0.5 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none"
+                >
+                    <span id="btn-text">Ingresar al Sistema</span>
+                    <i data-lucide="arrow-right" id="btn-icon" class="w-4 h-4"></i>
+                    <i data-lucide="loader-2" id="btn-spinner" class="w-4 h-4 animate-spin hidden"></i>
+                </button>
+            </form>
+
+        </div>
+
+        <!-- Enlace Volver -->
+        <div class="text-center mt-8">
+            <a href="index.html" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                Volver a la página principal
+            </a>
+        </div>
+
+    </div>
+
+    <!-- Script de Lógica Externa -->
+    <script type="module" src="js/login.js"></script>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panel de Administración — Espacio Limpio CRM</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary:   '#2563eb',
+                        secondary: '#3b82f6',
+                        dark:      '#0f172a',
+                        slate50:   '#f8fafc',
+                    },
+                    fontFamily: {
+                        display: ['Syne', 'sans-serif'],
+                        body:    ['DM Sans', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="css/dashboard.css" />
+</head>
+
+<body class="font-body dashboard-body">
+<div class="dashboard-layout">
+
+    <!-- SIDEBAR (Slate Oscuro) -->
+    <aside id="sidebar" class="sidebar">
+        <div class="sidebar-brand">
+            <div class="sidebar-logo">EL</div>
+            <div class="sidebar-brand-text">
+                <span class="sidebar-brand-name">Espacio Limpio</span>
+                <span class="sidebar-brand-sub">CRM Admin</span>
+            </div>
+        </div>
+        <div class="sidebar-divider"></div>
+        <nav class="sidebar-nav">
+            <span class="sidebar-nav-label">General</span>
+            <ul class="sidebar-nav-list">
+                <li><button class="sidebar-nav-item active" data-view="panel"><i data-lucide="layout-dashboard" class="nav-icon"></i><span>Panel Principal</span></button></li>
+                <li><button class="sidebar-nav-item" data-view="clientes"><i data-lucide="users" class="nav-icon"></i><span>Clientes</span></button></li>
+                <li><button class="sidebar-nav-item" data-view="agendamiento"><i data-lucide="calendar-check" class="nav-icon"></i><span>Agendamiento</span></button></li>
+                <li><button class="sidebar-nav-item" data-view="cotizaciones"><i data-lucide="file-text" class="nav-icon"></i><span>Cotizaciones</span><span class="nav-dot"></span></button></li>
+                <li><button class="sidebar-nav-item" data-view="reportes"><i data-lucide="bar-chart-3" class="nav-icon"></i><span>Reportes</span></button></li>
+            </ul>
+        </nav>
+        <nav class="sidebar-nav sidebar-nav-bottom">
+            <span class="sidebar-nav-label">Configuración</span>
+            <ul class="sidebar-nav-list">
+                <li><button class="sidebar-nav-item" data-view="ajustes"><i data-lucide="settings" class="nav-icon"></i><span>Ajustes</span></button></li>
+                <li><button class="sidebar-nav-item sidebar-logout" data-view="logout"><i data-lucide="log-out" class="nav-icon"></i><span>Cerrar Sesión</span></button></li>
+            </ul>
+        </nav>
+        <div class="sidebar-footer">
+            <div class="sidebar-status-dot"></div>
+            <span>Sistema en línea</span>
+        </div>
+    </aside>
+
+    <div class="main-wrapper">
+        <!-- HEADER (Blanco) -->
+        <header class="dashboard-header">
+            <div class="header-left">
+                <button id="sidebar-toggle" class="sidebar-toggle-btn"><i data-lucide="menu" class="w-5 h-5"></i></button>
+                <div>
+                    <h1 id="header-title" class="header-title">Panel Principal</h1>
+                    <p class="header-subtitle"><span id="header-date"></span></p>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="header-search">
+                    <i data-lucide="search" class="search-icon"></i>
+                    <input type="text" id="search-input" placeholder="Buscar registros..." class="search-input" />
+                </div>
+                <button class="header-icon-btn"><i data-lucide="bell" class="w-4 h-4"></i><span class="notif-dot"></span></button>
+                <button id="btn-refresh" class="header-icon-btn"><i data-lucide="refresh-cw" class="w-4 h-4"></i></button>
+                <div class="header-user">
+                    <div class="user-avatar">A</div>
+                    <div class="user-info">
+                        <span class="user-name">Admin</span>
+                        <span class="user-role">Espacio Limpio</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content" id="main-content">
+            <!-- VISTA: PANEL PRINCIPAL -->
+            <section id="view-panel" class="view active">
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon-wrap"><i data-lucide="users" class="kpi-icon"></i></div>
+                        <div class="kpi-data"><span class="kpi-value" id="kpi-total-clientes">—</span><span class="kpi-label">Total Clientes</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon-wrap"><i data-lucide="calendar" class="kpi-icon"></i></div>
+                        <div class="kpi-data"><span class="kpi-value" id="kpi-citas-hoy">—</span><span class="kpi-label">Citas Hoy</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon-wrap"><i data-lucide="file-text" class="kpi-icon"></i></div>
+                        <div class="kpi-data"><span class="kpi-value" id="kpi-pendientes">—</span><span class="kpi-label">Pendientes</span></div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon-wrap"><i data-lucide="sparkles" class="kpi-icon"></i></div>
+                        <div class="kpi-data"><span class="kpi-value" id="kpi-reservas-semana">—</span><span class="kpi-label">Reservas Semanales</span></div>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="charts-panel glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group"><i data-lucide="bar-chart-2" class="panel-title-icon"></i><h2 class="panel-title">Análisis de Ingresos</h2></div>
+                            <div class="chart-tabs">
+                                <button class="chart-tab active" data-chart="bar">Mensual</button>
+                                <button class="chart-tab" data-chart="line">Tendencia</button>
+                            </div>
+                        </div>
+                        <div class="chart-summary">
+                            <div class="chart-summary-item"><span class="chart-summary-label">Total Proyectado</span><span class="chart-summary-value" id="valor-total-cotizado">$ —</span></div>
+                            <div class="chart-summary-item"><span class="chart-summary-label">Ticket Promedio</span><span class="chart-summary-value" id="valor-promedio">$ —</span></div>
+                        </div>
+                        <div id="chart-bar-wrap" class="chart-wrap"><canvas id="chart-ventas"></canvas></div>
+                        <div id="chart-line-wrap" class="chart-wrap hidden"><canvas id="chart-tendencia"></canvas></div>
+                    </div>
+
+                    <div class="alerts-panel glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group"><i data-lucide="zap" class="panel-title-icon"></i><h2 class="panel-title">Actividad</h2></div>
+                        </div>
+                        <div id="alerts-feed" class="alerts-feed">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bottom-grid">
+                    <div class="table-panel glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group"><i data-lucide="table-2" class="panel-title-icon"></i><h2 class="panel-title">Registro de Solicitudes</h2></div>
+                            <div class="table-controls">
+                                <span class="table-count" id="table-count">0 registros</span>
+                                <button id="btn-export" class="btn-export"><i data-lucide="download" class="w-3.5 h-3.5"></i> Exportar</button>
+                            </div>
+                        </div>
+                        <div class="table-scroll-wrap">
+                            <table class="crm-table">
+                                <thead>
+                                    <tr><th>Cliente</th><th>Servicio</th><th>Contacto</th><th>Fecha Programada</th><th>Valor (CLP)</th><th>Estado</th></tr>
+                                </thead>
+                                <tbody id="clientes-tbody">
+                                    <tr><td colspan="6" style="text-align:center; padding: 24px; color: #94a3b8;"><i data-lucide="loader-2" class="animate-spin inline w-4 h-4"></i> Cargando...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="timeline-panel glass-panel">
+                        <div class="panel-header">
+                            <div class="panel-title-group"><i data-lucide="git-branch" class="panel-title-icon"></i><h2 class="panel-title">Timeline</h2></div>
+                        </div>
+                        <div id="timeline-feed" class="timeline-feed">
+                            <!-- JS Inject -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VISTAS PLACEHOLDER -->
+            <section id="view-clientes" class="view"><div class="view-placeholder glass-panel"><i data-lucide="users" class="placeholder-icon"></i><h2 class="placeholder-title">Módulo de Clientes</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
+            <section id="view-agendamiento" class="view"><div class="view-placeholder glass-panel"><i data-lucide="calendar-check" class="placeholder-icon"></i><h2 class="placeholder-title">Agendamiento</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
+            <section id="view-cotizaciones" class="view"><div class="view-placeholder glass-panel"><i data-lucide="file-text" class="placeholder-icon"></i><h2 class="placeholder-title">Cotizaciones</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
+            <section id="view-reportes" class="view"><div class="view-placeholder glass-panel"><i data-lucide="bar-chart-3" class="placeholder-icon"></i><h2 class="placeholder-title">Reportes</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
+            <section id="view-ajustes" class="view"><div class="view-placeholder glass-panel"><i data-lucide="settings" class="placeholder-icon"></i><h2 class="placeholder-title">Ajustes</h2><button class="placeholder-btn" data-view="panel">Volver</button></div></section>
+        </main>
+    </div>
+</div>
+
+<script type="module" src="js/db-config.js"></script>
+<script type="module" src="js/dashboard.js"></script>
+<script>document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });</script>
+</body>
+</html>

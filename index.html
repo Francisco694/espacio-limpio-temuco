@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="es" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Espacio Limpio | Servicios Profesionales de Limpieza</title>
+    
+    <!-- Tailwind y FontAwesome (Como lo pediste) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- CSS Adicional (si lo necesitas a futuro) -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <style>
+        .glass-morphism {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 bg-white/90 backdrop-blur-md shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-20 items-center">
+                <div class="flex items-center">
+                    <span class="text-2xl font-bold text-blue-700 tracking-tight">ESPACIO<span class="text-slate-900">LIMPIO</span></span>
+                </div>
+                <div class="hidden md:flex space-x-8 items-center">
+                    <a href="#inicio" class="hover:text-blue-600 font-medium transition">Inicio</a>
+                    <a href="#servicios" class="hover:text-blue-600 font-medium transition">Servicios</a>
+                    <a href="#nosotros" class="hover:text-blue-600 font-medium transition">Nosotros</a>
+                    <a href="#contacto" class="hover:text-blue-600 font-medium transition">Contacto</a>
+                    <button onclick="toggleModal()" class="bg-blue-600 text-white px-6 py-2 rounded-full font-semibold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                        Cotizar Proyecto
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="inicio" class="relative h-screen flex items-center justify-center overflow-hidden">
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1581578731548-c64695cc6958?auto=format&fit=crop&q=80" class="w-full h-full object-cover opacity-20" alt="Limpieza Profesional">
+            <div class="absolute inset-0 bg-gradient-to-b from-blue-50/50 to-slate-50"></div>
+        </div>
+        
+        <div class="relative z-10 text-center px-4 max-w-4xl">
+            <span class="inline-block py-1 px-3 rounded-full bg-blue-100 text-blue-700 text-sm font-bold mb-4 uppercase tracking-widest">Excelencia en Limpieza</span>
+            <h1 class="text-5xl md:text-7xl font-extrabold text-slate-900 mb-6">
+                Transformamos espacios, <br><span class="text-blue-600">elevamos estándares.</span>
+            </h1>
+            <p class="text-lg md:text-xl text-slate-600 mb-10 max-w-2xl mx-auto">
+                Servicios integrales de limpieza técnica y corporativa con tecnología de punta y personal altamente calificado.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button onclick="toggleModal()" class="px-8 py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition transform hover:-translate-y-1">
+                    Cotizar ahora
+                </button>
+                <a href="#servicios" class="px-8 py-4 bg-white text-slate-700 border border-slate-200 rounded-xl font-bold text-lg hover:bg-slate-50 transition">
+                    Ver Servicios
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Servicios -->
+    <section id="servicios" class="py-24 bg-white">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="text-center mb-16">
+                <h2 class="text-3xl md:text-4xl font-bold mb-4">Nuestros Servicios Especializados</h2>
+                <div class="w-20 h-1.5 bg-blue-600 mx-auto"></div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Servicio 1 -->
+                <div class="p-8 border border-slate-100 rounded-2xl hover:shadow-xl transition group">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition">
+                        <i class="fas fa-building text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Limpieza de Oficinas</h3>
+                    <p class="text-slate-600">Mantención diaria o semanal para espacios corporativos que buscan proyectar profesionalismo.</p>
+                </div>
+                <!-- Servicio 2 -->
+                <div class="p-8 border border-slate-100 rounded-2xl hover:shadow-xl transition group">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition">
+                        <i class="fas fa-tools text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Post-Construcción</h3>
+                    <p class="text-slate-600">Eliminación profunda de residuos de obra, polvo fino y detalles para entrega inmediata de proyectos.</p>
+                </div>
+                <!-- Servicio 3 -->
+                <div class="p-8 border border-slate-100 rounded-2xl hover:shadow-xl transition group">
+                    <div class="w-14 h-14 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center mb-6 group-hover:bg-blue-600 group-hover:text-white transition">
+                        <i class="fas fa-home text-2xl"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-3">Limpieza Residencial</h3>
+                    <p class="text-slate-600">Servicios premium para hogares, departamentos y condominios con atención al detalle.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Nosotros -->
+    <section id="nosotros" class="py-24 bg-slate-50">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center gap-12">
+            <div class="flex-1">
+                <img src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80" class="rounded-3xl shadow-2xl" alt="Nuestro Equipo">
+            </div>
+            <div class="flex-1">
+                <h2 class="text-3xl md:text-4xl font-bold mb-6">Comprometidos con la Higiene y el Bienestar</h2>
+                <p class="text-slate-600 mb-6 text-lg leading-relaxed">
+                    En <strong>Espacio Limpio</strong>, entendemos que un entorno ordenado es la base de la productividad y la salud. Con más de 10 años en el mercado, hemos perfeccionado procesos que garantizan resultados impecables.
+                </p>
+                <ul class="space-y-4">
+                    <li class="flex items-center gap-3">
+                        <i class="fas fa-check-circle text-blue-600"></i>
+                        <span class="font-medium text-slate-700">Personal certificado y verificado.</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <i class="fas fa-check-circle text-blue-600"></i>
+                        <span class="font-medium text-slate-700">Productos eco-amigables de alta eficiencia.</span>
+                    </li>
+                    <li class="flex items-center gap-3">
+                        <i class="fas fa-check-circle text-blue-600"></i>
+                        <span class="font-medium text-slate-700">Supervisión constante en terreno.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer / Contacto -->
+    <footer id="contacto" class="bg-slate-900 text-white py-16">
+        <div class="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12 border-b border-slate-800 pb-12">
+            <div>
+                <h3 class="text-2xl font-bold mb-6">Espacio Limpio</h3>
+                <p class="text-slate-400">Expertos en limpieza técnica industrial y comercial.</p>
+            </div>
+             <div>
+                <h4 class="font-bold mb-6 uppercase text-sm tracking-widest">Contacto</h4>
+                <p class="text-slate-400 mb-2"><i class="fas fa-phone mr-3"></i> +56 9 1234 5678</p>
+                <p class="text-slate-400 mb-4"><i class="fas fa-envelope mr-3"></i> contacto@espaciolimpio.cl</p>
+                <a href="https://www.instagram.com/espaciolimpio25/" target="_blank" class="text-slate-400 hover:text-white transition flex items-center gap-3">
+                    <i class="fab fa-instagram text-lg"></i> Instagram
+                </a>
+            </div>
+            <div>
+                <h4 class="font-bold mb-6 uppercase text-sm tracking-widest">Acceso</h4>
+                <a href="login.html" class="text-slate-500 hover:text-white transition flex items-center gap-2">
+                    <i class="fas fa-lock"></i> Acceso Administrador
+                </a>
+            </div>
+        </div>
+        <div class="text-center pt-8 text-slate-500 text-sm">
+            &copy; 2024 Espacio Limpio S.A. Todos los derechos reservados.
+        </div>
+    </footer>
+
+    <!-- MODAL DE COTIZACIÓN -->
+    <div id="modalCotizar" class="fixed inset-0 z-[60] hidden flex items-center justify-center p-4">
+        <!-- Overlay -->
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="toggleModal()"></div>
+        
+        <!-- Content -->
+        <div class="relative bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+            <div id="modalFormContent" class="p-8">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-slate-900">Solicitar Cotización</h2>
+                    <button onclick="toggleModal()" class="text-slate-400 hover:text-slate-600">
+                        <i class="fas fa-times text-xl"></i>
+                    </button>
+                </div>
+
+                <!-- EL FORMULARIO INTEGRADO CON MAIN.JS -->
+                <form id="cotizador-form" class="space-y-4">
+                    
+                    <!-- Fila 1: Nombre y RUT -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Nombre Completo</label>
+                            <input type="text" id="nombre" name="nombre" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">RUT / ID</label>
+                            <input type="text" id="rut" name="rut" required placeholder="12.345.678-9" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Fila 2: Correo y Teléfono -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Email</label>
+                            <input type="email" id="correo" name="correo" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Teléfono</label>
+                            <input type="tel" id="telefono" name="telefono" required placeholder="+56 9 1234 5678" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                    </div>
+
+                    <!-- Fila 3: Fecha y Hora (Bloqueo Integrado) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Fecha de visita</label>
+                            <input type="date" id="fecha" name="fecha" required class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold mb-1">Hora</label>
+                            <select id="hora" name="hora" required disabled class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none disabled:bg-slate-100 disabled:text-slate-400">
+                                <option value="">Selecciona fecha</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Fila 4: Tipo de Cliente -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-2">Tipo de Cliente</label>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer text-sm">
+                                <input type="radio" name="tipoCliente" value="Persona Natural" required class="w-4 h-4 text-blue-600"> Persona Natural
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer text-sm">
+                                <input type="radio" name="tipoCliente" value="Empresa" required class="w-4 h-4 text-blue-600"> Empresa
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Fila 5: Descripción -->
+                    <div>
+                        <label class="block text-sm font-semibold mb-1">Descripción del Servicio</label>
+                        <textarea id="descripcion" name="descripcion" required rows="2" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-600 outline-none" placeholder="¿Qué requiere cotizar?"></textarea>
+                    </div>
+
+                    <!-- Error -->
+                    <p id="form-error" class="hidden text-center text-xs text-red-500 font-medium"></p>
+
+                    <!-- Submit -->
+                    <button type="submit" id="btn-submit" class="w-full bg-blue-600 text-white font-bold py-3 rounded-lg hover:bg-blue-700 transition">
+                        Enviar Solicitud
+                    </button>
+                </form>
+            </div>
+
+            <!-- Success Message (Hidden by default) -->
+            <div id="success-message" class="hidden p-12 text-center">
+                <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fas fa-check text-4xl"></i>
+                </div>
+                <h3 class="text-2xl font-bold mb-4">¡Solicitud Enviada!</h3>
+                <p class="text-slate-600">
+                    Cotización enviada con éxito. Se ha registrado su solicitud y se ha sincronizado con Google Calendar para agendar la visita. Recibirá una notificación pronto.
+                </p>
+                <button onclick="toggleModal()" class="mt-8 text-blue-600 font-bold hover:underline">Cerrar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Scripts de Lógica y Firebase -->
+    <script type="module" src="js/db-config.js"></script>
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
