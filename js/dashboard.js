@@ -5,7 +5,7 @@
  */
 
 import { db } from './db-config.js';
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, query, orderBy, Timestamp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const auth = getAuth();
@@ -321,27 +321,37 @@ const Views = {
             `).join('') : `<tr><td colspan="6" class="empty-state">Sin solicitudes recientes</td></tr>`;
         }
 
-        this.renderChart(ingresos);
+        this.renderChart();
         this.renderTimeline();
     },
 
-    renderChart(ingresosRealesMesActual) {
+    renderChart() {
         const ctx = document.getElementById('chart-ventas');
         if (!ctx) return;
         if (AppState.chartInstance) AppState.chartInstance.destroy();
 
         const data = Array(6).fill(0);
         const labels = [];
+        const anioActual = new Date().getFullYear();
+        
         for(let i=5; i>=0; i--) {
             const d = new Date(); d.setMonth(d.getMonth() - i);
             labels.push(d.toLocaleString('es', {month: 'short'}).toUpperCase());
-            data[5-i] = Math.floor(Math.random() * 2000000) + 500000; // Datos históricos mock
+            
+            // Buscar datos reales para este mes en particular
+            const mesTarget = d.getMonth();
+            const ingresosMes = AppState.cotizaciones.filter(c => {
+               if(c.estadoCRM !== 'Aprobada') return false;
+               const cDate = c.creadoEnDate || new Date(c.fechaAgendada || c.fecha);
+               return cDate.getMonth() === mesTarget && cDate.getFullYear() === anioActual;
+            }).reduce((acc, c) => acc + (parseInt(c.valorTotal) || parseInt(c.valorCotizado?.replace(/\D/g,'')) || 0), 0);
+            
+            data[5-i] = ingresosMes;
         }
-        data[5] += ingresosRealesMesActual; // Sumar reales
 
         AppState.chartInstance = new Chart(ctx, {
             type: 'line',
-            data: { labels, datasets: [{ label: 'Ingresos Proyectados', data, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: '#2563eb' }] },
+            data: { labels, datasets: [{ label: 'Ingresos Históricos', data, borderColor: '#2563eb', backgroundColor: 'rgba(37,99,235,0.1)', borderWidth: 2, fill: true, tension: 0.4, pointBackgroundColor: '#2563eb' }] },
             options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { border:{display:false}, grid:{color:'#f1f5f9'}, ticks: { color: '#64748b', callback: v => `$${v/1000}k` } }, x: { border:{display:false}, grid:{display:false}, ticks:{color:'#64748b'} } } }
         });
     },
@@ -459,7 +469,7 @@ window.DB = {
             });
 
             AppState.cotizaciones = snapshot.docs.map(doc => ({
-                id: doc.id, ...doc.data(), creadoEnDate: doc.data().creadoEn?.toDate?.() || new Date()
+                id: doc.id, ...doc.data(), creadoEnDate: doc.data().creadoEn?.toDate?.() || doc.data().timestamp?.toDate?.() || new Date()
             }));
 
             AppState.isInitialLoad = false;
@@ -542,7 +552,6 @@ window.DB = {
         try {
             await updateDoc(doc(db, 'cotizaciones', id), { 
                 estadoCRM: 'Aprobada', modificadoEn: serverTimestamp(),
-                // Aseguramos que guarde los últimos cambios hechos en el modal
                 valorTotal: parseInt(document.getElementById('cot-valor-total').value) || 0
             });
             UI.closeModal('modal-cotizacion');
@@ -569,7 +578,120 @@ window.DB = {
     },
 
     async deleteCliente(id) { if(confirm('¿Eliminar cliente?')) { await deleteDoc(doc(db, 'clientes', id)); UI.showToast('Eliminado', 'info'); } },
-    async deleteCotizacion(id) { if(confirm('¿Eliminar cotización permanentemente?')) { await deleteDoc(doc(db, 'cotizaciones', id)); UI.showToast('Eliminado', 'info'); } }
+    async deleteCotizacion(id) { if(confirm('¿Eliminar cotización permanentemente?')) { await deleteDoc(doc(db, 'cotizaciones', id)); UI.showToast('Eliminado', 'info'); } },
+    
+    // --- GENERADOR DE DATOS DE PRUEBA INTEGRADO ---
+    async ejecutarCargaMasiva() {
+        const password = prompt('Esta acción inyectará 105 registros de prueba. Escriba "CONFIRMAR" para proceder:');
+        if (password !== 'CONFIRMAR') {
+            UI.showToast('Carga masiva cancelada.', 'info');
+            return;
+        }
+
+        UI.showToast('Iniciando carga de datos... Por favor espere.', 'info');
+        
+        const NUM_CLIENTES = 15; 
+        const MESES_ATRAS = 7;
+        const nombres = ['Juan Pérez', 'María Soto', 'Inmobiliaria Araucanía', 'Carlos Ruiz', 'Empresa Temuco', 'Ana Morales', 'Constructora Sur', 'Pedro Silva', 'Camila Castro', 'Luis Gómez', 'Clínica Alemana', 'Automotora Centro', 'Sociedad de Inversiones', 'Colegio San José', 'Familia González'];
+        const servicios = ['hogar', 'oficina', 'post', 'electro'];
+        const estadosHistoricos = ['Aprobada', 'Aprobada', 'Aprobada', 'Rechazada', 'Pendiente']; 
+        const generarRut = () => `${Math.floor(Math.random() * 10 + 10)}.${Math.floor(Math.random() * 800 + 100)}.${Math.floor(Math.random() * 800 + 100)}-${Math.floor(Math.random() * 9)}`;
+        const generarTelefono = () => `+56 9 ${Math.floor(Math.random()*80000000 + 10000000)}`;
+
+        let registrosCreados = 0;
+
+        try {
+            for (let i = 0; i <= MESES_ATRAS; i++) {
+                const clientesDelMes = Math.floor(Math.random() * 5) + (NUM_CLIENTES - 2); 
+
+                for (let j = 0; j < clientesDelMes; j++) {
+                    const fechaCreacion = new Date();
+                    fechaCreacion.setMonth(fechaCreacion.getMonth() - i);
+                    fechaCreacion.setDate(Math.floor(Math.random() * 28) + 1); 
+                    fechaCreacion.setHours(Math.floor(Math.random() * 8) + 9);
+
+                    const fechaAgendada = new Date(fechaCreacion);
+                    fechaAgendada.setDate(fechaAgendada.getDate() + Math.floor(Math.random() * 10) + 1);
+                    
+                    const [yyyy, mm, dd] = fechaAgendada.toISOString().split('T')[0].split('-');
+                    const horaStr = `${Math.floor(Math.random() * 8) + 9}:00`; 
+
+                    const nombreCliente = nombres[Math.floor(Math.random() * nombres.length)];
+                    const servicioSelect = servicios[Math.floor(Math.random() * servicios.length)];
+                    
+                    let estadoActual = 'Pendiente';
+                    if (i > 0) { 
+                        estadoActual = estadosHistoricos[Math.floor(Math.random() * estadosHistoricos.length)];
+                    } else { 
+                        estadoActual = Math.random() > 0.5 ? 'Pendiente' : 'Aprobada';
+                    }
+
+                    let m2 = 0;
+                    let subtotal = 0;
+                    let personal = 1;
+
+                    if (servicioSelect === 'hogar') { m2 = Math.floor(Math.random() * 80 + 40); subtotal = (1200 * m2); }
+                    else if (servicioSelect === 'oficina') { m2 = Math.floor(Math.random() * 200 + 50); subtotal = (1500 * m2); personal = 2; }
+                    else if (servicioSelect === 'post') { m2 = Math.floor(Math.random() * 150 + 60); subtotal = (2500 * m2); personal = 3; }
+                    else if (servicioSelect === 'electro') { subtotal = 35000; }
+
+                    const iva = Math.round(subtotal * 0.19);
+                    const total = subtotal + iva;
+
+                    const cotizacionRef = await addDoc(collection(db, 'cotizaciones'), {
+                        cliente: nombreCliente,
+                        rut: generarRut(),
+                        correo: `contacto_${j}@mail.com`,
+                        telefono: generarTelefono(),
+                        direccion: 'Temuco Centro',
+                        tipoCliente: Math.random() > 0.6 ? 'Empresa' : 'Persona Natural',
+                        tipoLimpieza: servicioSelect,
+                        fechaAgendada: `${yyyy}-${mm}-${dd}`,
+                        horaAgendada: horaStr,
+                        metros: m2,
+                        personal: personal,
+                        descuento: 0,
+                        prioridad: Math.random() > 0.8 ? 'Alta' : 'Normal',
+                        descripcion: 'Generado automáticamente para prueba histórica.',
+                        valorSubtotal: subtotal,
+                        valorTotal: total,
+                        estadoCRM: estadoActual,
+                        fuente: Math.random() > 0.4 ? 'Modal Web' : 'CRM Interno',
+                        creadoEn: Timestamp.fromDate(fechaCreacion),
+                        modificadoEn: Timestamp.fromDate(fechaCreacion)
+                    });
+                    registrosCreados++;
+
+                    if (Math.random() > 0.7) {
+                         await addDoc(collection(db, 'clientes'), {
+                            nombre: nombreCliente,
+                            rut: generarRut(),
+                            correo: `contacto_${j}@mail.com`,
+                            telefono: generarTelefono(),
+                            direccion: 'Temuco',
+                            fechaRegistro: fechaCreacion.toISOString().split('T')[0],
+                            creadoEn: Timestamp.fromDate(fechaCreacion)
+                        });
+                    }
+
+                    if (estadoActual === 'Aprobada') {
+                        await addDoc(collection(db, 'citas'), {
+                            cotizacionId: cotizacionRef.id,
+                            clienteNombre: nombreCliente,
+                            servicio: servicioSelect,
+                            fecha: `${yyyy}-${mm}-${dd}`,
+                            hora: horaStr,
+                            estado: 'Agendada'
+                        });
+                    }
+                }
+            }
+            UI.showToast(`¡Carga completada! Se crearon ${registrosCreados} registros.`, 'success');
+        } catch (error) {
+            console.error("Error en la carga masiva:", error);
+            UI.showToast('Error en la carga de datos', 'error');
+        }
+    }
 };
 
 // ==============================================================
@@ -640,6 +762,9 @@ function setupEventListeners() {
     // Cierre Sesion Visual
     document.getElementById('btn-logout-header')?.addEventListener('click', () => { if(confirm('¿Cerrar sesión?')) window.location.href='login.html'; });
     document.getElementById('btn-logout-sidebar')?.addEventListener('click', () => { if(confirm('¿Cerrar sesión?')) window.location.href='login.html'; });
+    
+    // Exponer función de Carga Masiva al objeto Window para llamarla desde la consola
+    window.ejecutarCargaMasiva = DB.ejecutarCargaMasiva;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
