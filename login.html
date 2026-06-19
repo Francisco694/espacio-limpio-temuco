@@ -85,7 +85,7 @@
                 <div>
                     <div class="flex items-center justify-between mb-1.5">
                         <label for="password" class="block text-xs font-semibold text-slate-600">Contraseña</label>
-                        <a href="#" class="text-xs font-medium text-primary hover:text-blue-700 transition-colors">¿Olvidaste tu contraseña?</a>
+                        <button type="button" id="btn-forgot-password" class="text-xs font-medium text-primary hover:text-blue-700 transition-colors bg-transparent border-0 cursor-pointer p-0">¿Olvidaste tu contraseña?</button>
                     </div>
                     <div class="relative">
                         <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
@@ -131,7 +131,52 @@
         </div>
 
     </div>
+<div id="modal-reset" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm cursor-pointer" id="bg-modal-reset"></div>
+        
+        <div class="relative bg-white w-full max-w-md rounded-2xl shadow-2xl p-8 transform transition-all">
+            <div class="flex justify-between items-center mb-5">
+                <h2 class="font-display text-xl font-bold text-slate-900">Recuperar Contraseña</h2>
+                <button type="button" id="btn-close-reset" class="text-slate-400 hover:text-slate-700 transition bg-slate-50 hover:bg-slate-100 p-2 rounded-full">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+            
+            <p class="text-sm text-slate-600 mb-6">Ingresa tu correo electrónico registrado y te enviaremos un enlace seguro para restablecer tu contraseña.</p>
+            
+            <form id="reset-form" novalidate>
+                <div class="mb-5">
+                    <label for="reset-email" class="block text-xs font-semibold text-slate-600 mb-1.5">Correo Electrónico</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                            <i data-lucide="mail" class="w-4 h-4 text-slate-400"></i>
+                        </div>
+                        <input 
+                            type="email" 
+                            id="reset-email" 
+                            class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all" 
+                            required 
+                            placeholder="admin@espaciolimpio.cl"
+                        >
+                    </div>
+                </div>
 
+                <div id="reset-msg" class="hidden mb-5 text-sm font-medium p-3 rounded-lg flex items-start gap-2">
+                    <i data-lucide="info" class="w-4 h-4 flex-shrink-0 mt-0.5" id="reset-msg-icon"></i>
+                    <span id="reset-msg-text"></span>
+                </div>
+
+                <button 
+                    type="submit" 
+                    id="btn-submit-reset" 
+                    class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm py-2.5 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                    <span id="reset-btn-text">Enviar Enlace de Recuperación</span>
+                    <i data-lucide="loader-2" id="reset-spinner" class="w-4 h-4 animate-spin hidden"></i>
+                </button>
+            </form>
+        </div>
+    </div>
     <!-- Script de Lógica Externa -->
     <script type="module" src="js/login.js"></script>
 </body>

@@ -3,42 +3,33 @@
    Estilos corporativos unificados: Slate & Blue
    ================================================================ */
 
-/* ---------------------------------------------------------------
-   1. CSS CUSTOM PROPERTIES (Design Tokens)
---------------------------------------------------------------- */
 :root {
-    /* Nueva Paleta Premium SaaS */
-    --color-primary:   #2563eb; /* Blue 600 */
-    --color-secondary: #3b82f6; /* Blue 500 */
-    --color-accent:    #dbeafe; /* Blue 100 */
-    --color-dark:      #0f172a; /* Slate 900 */
-    --color-light:     #ffffff; /* White */
-    --color-mid:       #f8fafc; /* Slate 50 */
-    --color-border:    #e2e8f0; /* Slate 200 */
+    --color-primary:   #6EC1E4;
+    --color-secondary: #55A8CC;
+    --color-accent:    #EBF6FB;
 
-    --font-display: 'Syne', sans-serif;
-    --font-body:    'DM Sans', sans-serif;
+    --color-dark:      #0f172a;
+    --color-light:     #ffffff;
+    --color-mid:       #f8fafc;
+    --color-border:    #e2e8f0;
 
-    /* Sombras más limpias y ejecutivas */
-    --shadow-soft: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    --shadow-xl:   0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    
-    --radius-xl:   1rem;
-    --radius-2xl:  1.5rem;
+    --font-display: 'Montserrat', sans-serif;
+    --font-body: 'Nunito Sans', sans-serif;
+
+    --shadow-soft: 0 4px 6px -1px rgba(0,0,0,.05), 0 2px 4px -1px rgba(0,0,0,.03);
+    --shadow-xl: 0 20px 25px -5px rgba(0,0,0,.1), 0 10px 10px -5px rgba(0,0,0,.04);
+
+    --radius-xl: 1rem;
+    --radius-2xl: 1.5rem;
 }
 
-/* ---------------------------------------------------------------
-   2. BASE RESET & GLOBALS
---------------------------------------------------------------- */
 *, *::before, *::after {
     box-sizing: border-box;
     margin: 0;
     padding: 0;
 }
 
-html {
-    scroll-behavior: smooth;
-}
+html { scroll-behavior: smooth; }
 
 body {
     background-color: var(--color-mid);
@@ -47,14 +38,8 @@ body {
     overflow-x: hidden;
 }
 
-/* ---------------------------------------------------------------
-   3. NAVBAR STYLES
---------------------------------------------------------------- */
-nav#navbar {
-    background: transparent;
-    border-bottom: 1px solid transparent;
-}
-
+/* NAVBAR */
+nav#navbar { background: transparent; border-bottom: 1px solid transparent; }
 nav#navbar.scrolled {
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: blur(12px);
@@ -63,389 +48,92 @@ nav#navbar.scrolled {
     box-shadow: var(--shadow-soft);
 }
 
-/* Logo box */
-.navbar-logo {
-    background: var(--color-primary);
-    transition: transform 0.2s ease;
-}
+.navbar-logo { background: var(--color-primary); transition: transform 0.2s ease; }
+.navbar-logo:hover { transform: scale(1.05); }
 
-.navbar-logo:hover {
-    transform: scale(1.05);
-}
+.navbar-brand { color: var(--color-dark); transition: color 0.3s ease; }
+nav#navbar:not(.scrolled) .navbar-brand.text-on-dark { color: var(--color-light); }
+nav#navbar:not(.scrolled) .nav-link.text-on-dark { color: rgba(255, 255, 255, 0.9); }
 
-.navbar-brand {
-    color: var(--color-dark);
-    transition: color 0.3s ease;
-}
+.nav-link { color: var(--color-dark); font-weight: 500; transition: color 0.2s ease; }
+.nav-link:hover { color: var(--color-primary); }
 
-nav#navbar:not(.scrolled) .navbar-brand.text-on-dark {
-    color: var(--color-light);
-}
+.btn-cta-nav { background: var(--color-primary); color: white; transition: all 0.2s ease; }
+.btn-cta-nav:hover { background: #55A8CC; transform: translateY(-1px); box-shadow: 0 6px 15px rgba(37, 99, 235, 0.25); }
 
-nav#navbar:not(.scrolled) .nav-link.text-on-dark {
-    color: rgba(255, 255, 255, 0.9);
-}
+/* WIDGETS Y FORMULARIOS */
+.form-label { color: #475569; letter-spacing: 0.01em; }
 
-/* Nav links */
-.nav-link {
-    color: var(--color-dark);
-    font-weight: 500;
-    transition: color 0.2s ease;
-}
-
-.nav-link:hover {
-    color: var(--color-primary);
-}
-
-/* CTA nav button */
-.btn-cta-nav {
-    background: var(--color-primary);
-    color: white;
-    transition: all 0.2s ease;
-}
-
-.btn-cta-nav:hover {
-    background: #1d4ed8; /* Blue 700 */
-    transform: translateY(-1px);
-    box-shadow: 0 6px 15px rgba(37, 99, 235, 0.25);
-}
-
-/* ---------------------------------------------------------------
-   4. HERO SECTION
---------------------------------------------------------------- */
-.hero-section {
-    position: relative;
-}
-
-/* Badge pill */
-.badge-pill {
-    background: rgba(255, 255, 255, 0.1);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(4px);
-}
-
-.value-icon {
-    background: rgba(255, 255, 255, 0.15);
-    color: white;
-}
-
-/* ---------------------------------------------------------------
-   5. WIDGET / COTIZADOR CARD
---------------------------------------------------------------- */
-.widget-card {
+.form-input, .form-select {
     background: #ffffff;
-    border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-xl);
-}
-
-.widget-topbar {
-    background: var(--color-primary);
-}
-
-.widget-icon {
-    background: var(--color-accent);
-    color: var(--color-primary);
-}
-
-.live-badge {
-    background: rgba(37, 99, 235, 0.1);
-    color: var(--color-primary);
-    border: 1px solid rgba(37, 99, 235, 0.2);
-}
-
-/* Form labels */
-.form-label {
-    color: #475569; /* Slate 600 */
-    letter-spacing: 0.01em;
-}
-
-/* Inputs and selects - Estilo Clean SaaS */
-.form-input,
-.form-select {
-    background: #ffffff;
-    border: 1px solid #cbd5e1; /* Slate 300 */
+    border: 1px solid #cbd5e1;
     color: var(--color-dark);
     appearance: none;
     -webkit-appearance: none;
     transition: all 0.2s ease;
 }
-
-.form-input:hover,
-.form-select:hover {
-    border-color: #94a3b8; /* Slate 400 */
-}
-
-.form-input:focus,
-.form-select:focus {
+.form-input:hover, .form-select:hover { border-color: #94a3b8; }
+.form-input:focus, .form-select:focus {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    box-shadow: 0 0 0 3px rgba(110, 193, 228, 0.25);
     outline: none;
 }
+.form-input::placeholder { color: #94a3b8; }
 
-.form-input::placeholder {
-    color: #94a3b8;
-}
-
-/* Select arrow custom */
 .form-select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230f172a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 14px center;
     padding-right: 36px;
 }
-
-input[type="date"],
-input[type="time"] {
-    color-scheme: light;
+input[type="date"], input[type="time"] { color-scheme: light; }
+input[type="file"]::file-selector-button {
+    background-color: #EBF6FB;
+    color: #6EC1E4;
+    border: 0;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-right: 12px;
 }
+input[type="file"]::file-selector-button:hover { background-color: #55A8CC; color: white; }
 
-/* Valor referencial display box */
-.valor-box {
-    background: var(--color-mid);
-    border: 1px solid var(--color-border);
-}
-
-.valor-icon {
-    color: var(--color-primary);
-}
-
-.valor-price {
-    color: var(--color-primary);
-    transition: all 0.3s ease;
-}
-
-.valor-price.updating {
-    animation: priceUpdate 0.4s ease;
-}
-
-@keyframes priceUpdate {
-    0%   { transform: scale(1); opacity: 1; }
-    30%  { transform: scale(1.08); opacity: 0.8; }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-/* Submit button - Solid Blue */
-.btn-submit {
-    background: var(--color-primary);
-    transition: all 0.2s ease;
-}
-
+.btn-submit { background: var(--color-primary); transition: all 0.2s ease; }
 .btn-submit:hover:not(:disabled) {
-    background: #1d4ed8;
+    background: var(--color-secondary);
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 8px 20px rgba(110, 193, 228, 0.35);
 }
+.btn-submit:active:not(:disabled) { transform: translateY(0); }
 
-.btn-submit:active:not(:disabled) {
-    transform: translateY(0);
-}
+/* FOOTER */
+.footer-section { background: linear-gradient(135deg, #6EC1E4 0%, #55A8CC 100%); color: rgba(255,255,255,0.95); }
+.footer-logo { background: rgba(255,255,255,0.15); color: white; backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.2); }
+.footer-section a { color: rgba(255,255,255,0.95); text-decoration: none; transition: all 0.3s ease; }
+.footer-section a:hover { color: #0f172a; transform: translateX(3px); }
 
-.btn-submit.loading {
-    position: relative;
-    pointer-events: none;
-    opacity: 0.8;
-}
-
-.btn-submit.loading::after {
-    content: '';
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    border: 2px solid rgba(255,255,255,0.4);
-    border-top-color: white;
-    border-radius: 50%;
-    animation: spin 0.6s linear infinite;
-}
-
-/* Success message */
-.success-icon {
-    background: #dcfce7; /* Green 100 */
-    color: #16a34a; /* Green 600 */
-}
-
-.crm-badge {
-    background: var(--color-mid);
-    color: #475569;
-    border: 1px solid var(--color-border);
-}
-
-.btn-nueva {
-    background: transparent;
-    border: 1px solid var(--color-border);
-    color: var(--color-dark);
-}
-
-.btn-nueva:hover {
-    background: var(--color-mid);
-}
-
-#cotizador-form {
-    transition: opacity 0.4s ease, transform 0.4s ease;
-}
-
-#cotizador-form.fade-out {
-    opacity: 0;
-    transform: translateY(-10px);
-    pointer-events: none;
-}
-
-#success-message {
-    animation: fadeInUp 0.5s ease forwards;
-}
-
-/* ---------------------------------------------------------------
-   6. SERVICES SECTION
---------------------------------------------------------------- */
-.services-section {
-    background: #ffffff;
-}
-
-.section-tag {
-    background: var(--color-accent);
-    color: var(--color-primary);
-}
-
-.service-card {
-    background: #ffffff;
-    border: 1px solid var(--color-border);
-    transition: all 0.3s ease;
-}
-
-.service-card:hover {
-    transform: translateY(-6px);
-    box-shadow: var(--shadow-xl);
-    border-color: #cbd5e1;
-}
-
-.service-icon-wrap {
-    background: var(--color-mid);
-    color: var(--color-primary);
-    transition: all 0.3s ease;
-}
-
-.service-card:hover .service-icon-wrap {
-    background: var(--color-primary);
-    color: white;
-}
-
-.service-card-body {
-    color: var(--color-dark);
-}
-
-.service-cta {
-    color: var(--color-primary);
-    transition: gap 0.2s ease;
-}
-
-.service-cta:hover {
-    gap: 0.5rem;
-}
-
-/* ---------------------------------------------------------------
-   7. HOW IT WORKS SECTION
---------------------------------------------------------------- */
-.how-section {
-    background: var(--color-mid);
-}
-
-.step-card {
-    background: white;
-    border: 1px solid var(--color-border);
-    box-shadow: var(--shadow-soft);
-    transition: transform 0.3s ease;
-}
-
-.step-card:hover {
-    transform: translateY(-4px);
-}
-
-.step-number {
-    background: var(--color-primary);
-    color: white;
-    font-family: var(--font-display);
-}
-
-/* ---------------------------------------------------------------
-   8. FOOTER SECTION
---------------------------------------------------------------- */
-.footer-section {
-    background: var(--color-dark); /* Slate 900 */
-    color: #cbd5e1; /* Slate 300 */
-}
-
-.footer-logo {
-    background: var(--color-primary);
-    color: white;
-}
-
-.social-link {
-    background: rgba(255,255,255,0.05);
-    color: #cbd5e1;
-    border: 1px solid rgba(255,255,255,0.1);
-}
-
-.social-link:hover {
-    background: var(--color-primary);
-    color: white;
-    border-color: var(--color-primary);
-}
-
-.footer-divider {
-    border-color: rgba(255,255,255,0.1);
-}
-
-.easter-egg {
-    color: #475569;
-    cursor: help;
-    transition: color 0.3s ease;
-}
-.easter-egg:hover { color: var(--color-accent); }
-
-/* ---------------------------------------------------------------
-   9. KEYFRAME ANIMATIONS & UTILS
---------------------------------------------------------------- */
-@keyframes fadeInUp {
-    from { opacity: 0; transform: translateY(24px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes spin {
-    to { transform: rotate(360deg); }
-}
-
+/* ANIMACIONES GLOBALES REVEAL */
 .reveal {
     opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.6s ease, transform 0.6s ease;
+    transform: translateY(30px);
+    transition: opacity 0.6s cubic-bezier(0.5, 0, 0, 1), transform 0.6s cubic-bezier(0.5, 0, 0, 1);
 }
-.reveal.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-.reveal-delay-1 { transition-delay: 0.1s; }
-.reveal-delay-2 { transition-delay: 0.2s; }
-.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal.active { opacity: 1; transform: translateY(0); }
+.delay-100 { transition-delay: 100ms; }
+.delay-200 { transition-delay: 200ms; }
+.delay-300 { transition-delay: 300ms; }
 
-#metros-group {
-    transition: opacity 0.3s ease, max-height 0.4s ease;
-    max-height: 200px;
-    overflow: hidden;
-}
-#metros-group.hidden {
-    opacity: 0;
-    max-height: 0;
-    margin: 0;
-    pointer-events: none;
-}
-
-.field-error {
-    border-color: #ef4444 !important;
-    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
-}
-
-::-webkit-scrollbar { width: 6px; }
+/* ESTILOS DE DESPLAZAMIENTO Y UI GLOBAL */
+::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: var(--color-mid); }
-::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-::selection { background: rgba(37, 99, 235, 0.2); color: var(--color-dark); }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #6EC1E4; }
+::selection { background: rgba(110, 193, 228, 0.25); color: var(--color-dark); }
+.modal-scroll::-webkit-scrollbar { width: 6px; }
+
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+#success-message { animation: fadeInUp 0.5s ease forwards; }

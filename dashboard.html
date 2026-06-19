@@ -32,13 +32,15 @@
 <body class="font-body dashboard-body">
 <div class="dashboard-layout">
 
-    <!-- SIDEBAR -->
+    <!-- =========================================================
+         SIDEBAR (Navegación Lateral)
+         ========================================================= -->
     <aside id="sidebar" class="sidebar">
         <div class="sidebar-brand">
             <div class="sidebar-logo">EL</div>
             <div class="sidebar-brand-text">
                 <span class="sidebar-brand-name">Espacio Limpio</span>
-                <span class="sidebar-brand-sub">CRM Admin</span>
+                <span class="sidebar-brand-sub">CRM SaaS</span>
             </div>
         </div>
         <div class="sidebar-divider"></div>
@@ -49,13 +51,17 @@
                 <li><button class="sidebar-nav-item" data-view="clientes"><i data-lucide="users" class="nav-icon"></i><span>Clientes</span></button></li>
                 <li><button class="sidebar-nav-item" data-view="agendamiento"><i data-lucide="calendar-check" class="nav-icon"></i><span>Agendamiento</span></button></li>
                 <li><button class="sidebar-nav-item" data-view="cotizaciones"><i data-lucide="file-text" class="nav-icon"></i><span>Cotizaciones</span><span class="nav-dot" id="menu-cotiz-dot"></span></button></li>
-                <li><button class="sidebar-nav-item" data-view="reportes"><i data-lucide="bar-chart-3" class="nav-icon"></i><span>Reportes</span></button></li>
+                <!-- ID nav-reportes agregado para control de permisos (Ocultar a colaboradores) -->
+                <li id="nav-reportes"><button class="sidebar-nav-item" data-view="reportes"><i data-lucide="bar-chart-3" class="nav-icon"></i><span>Reportes</span></button></li>
             </ul>
         </nav>
         <nav class="sidebar-nav sidebar-nav-bottom">
             <span class="sidebar-nav-label">Configuración</span>
             <ul class="sidebar-nav-list">
-                <li><button class="sidebar-nav-item" data-view="ajustes"><i data-lucide="settings" class="nav-icon"></i><span>Ajustes</span></button></li>
+                <!-- ID nav-colaboradores agregado (Módulo exclusivo Administrador) -->
+                <li id="nav-colaboradores"><button class="sidebar-nav-item" data-view="colaboradores"><i data-lucide="shield" class="nav-icon"></i><span>Colaboradores</span></button></li>
+                <!-- ID nav-ajustes agregado para control de permisos (Ocultar a colaboradores) -->
+                <li id="nav-ajustes"><button class="sidebar-nav-item" data-view="ajustes"><i data-lucide="settings" class="nav-icon"></i><span>Ajustes</span></button></li>
                 <li><button class="sidebar-nav-item sidebar-logout" id="btn-logout-sidebar"><i data-lucide="log-out" class="nav-icon"></i><span>Cerrar Sesión</span></button></li>
             </ul>
         </nav>
@@ -66,7 +72,9 @@
     </aside>
 
     <div class="main-wrapper">
-        <!-- HEADER -->
+        <!-- =========================================================
+             HEADER SUPERIOR
+             ========================================================= -->
         <header class="dashboard-header">
             <div class="header-left">
                 <button id="sidebar-toggle" class="sidebar-toggle-btn"><i data-lucide="menu" class="w-5 h-5"></i></button>
@@ -110,13 +118,13 @@
                 <!-- Botón Actualizar -->
                 <button id="btn-refresh" class="header-icon-btn" title="Actualizar Dashboard"><i id="refresh-icon" data-lucide="refresh-cw" class="w-4 h-4"></i></button>
                 
-                <!-- Usuario Admin -->
+                <!-- Usuario Activo -->
                 <div class="relative">
                     <div id="btn-admin-menu" class="header-user">
-                        <div class="user-avatar">A</div>
+                        <div class="user-avatar">U</div>
                         <div class="user-info">
-                            <span class="user-name" id="admin-name">Admin</span>
-                            <span class="user-role">Espacio Limpio</span>
+                            <span class="user-name" id="admin-name">Usuario</span>
+                            <span class="user-role" id="admin-role">Espacio Limpio</span>
                         </div>
                     </div>
                     <!-- Dropdown Admin -->
@@ -231,7 +239,7 @@
             </section>
 
             <!-- VISTA: REPORTES -->
-          <section id="view-reportes" class="view">
+            <section id="view-reportes" class="view">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="glass-panel p-6">
                         <div class="flex justify-between items-center mb-6">
@@ -252,11 +260,12 @@
                 </div>
             </section>
 
-            <!-- VISTA: AJUSTES -->
+            <!-- VISTA: AJUSTES (Configuración de Precios) -->
             <section id="view-ajustes" class="view">
-                <div class="glass-panel p-8 max-w-3xl mx-auto w-full">
+                <div class="glass-panel p-8 max-w-4xl mx-auto w-full">
                     <h2 class="panel-title text-xl mb-8 border-b border-slate-100 pb-4">Configuración del CRM</h2>
-                    <form class="space-y-8">
+                    <form id="form-configuracion" class="space-y-8">
+                        
                         <div>
                             <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="building" class="w-4 h-4 text-blue-600"></i> Perfil de Empresa</h3>
                             <div class="grid grid-cols-2 gap-5">
@@ -266,20 +275,81 @@
                                 <div class="input-group"><label>Teléfono Contacto</label><input type="text" value="+56 9 1234 5678" class="modern-input"></div>
                             </div>
                         </div>
+
+                        <!-- Panel de Tarifas Reactivas -->
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="dollar-sign" class="w-4 h-4 text-blue-600"></i> Tarifas y Precios de Servicios</h3>
+                            <p class="text-xs text-slate-500 mb-4">Estos valores alimentan directamente a la calculadora automática de cotizaciones.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-6 border border-slate-200 rounded-xl bg-slate-50 shadow-inner">
+                                <div class="space-y-4">
+                                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Cargos Base Mínimos</h4>
+                                    <div class="input-group"><label>Base Residencial ($)</label><input type="number" id="cfg-base-hogar" class="modern-input font-bold text-slate-800"></div>
+                                    <div class="input-group"><label>Base Oficinas ($)</label><input type="number" id="cfg-base-oficina" class="modern-input font-bold text-slate-800"></div>
+                                    <div class="input-group"><label>Base Post-Construcción ($)</label><input type="number" id="cfg-base-post" class="modern-input font-bold text-slate-800"></div>
+                                    <div class="input-group"><label>Fijo Hornos/Electro ($)</label><input type="number" id="cfg-base-electro" class="modern-input font-bold text-slate-800"></div>
+                                </div>
+
+                                <div class="space-y-4">
+                                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider">Valor por M² y Extras</h4>
+                                    <div class="input-group"><label>Valor m² Residencial ($)</label><input type="number" id="cfg-m2-hogar" class="modern-input font-bold text-slate-800"></div>
+                                    <div class="input-group"><label>Valor m² Oficinas ($)</label><input type="number" id="cfg-m2-oficina" class="modern-input font-bold text-slate-800"></div>
+                                    <div class="input-group"><label>Valor m² Post-Const. ($)</label><input type="number" id="cfg-m2-post" class="modern-input font-bold text-slate-800"></div>
+                                    <div class="input-group"><label>Cargo Personal Adicional c/u ($)</label><input type="number" id="cfg-extra-personal" class="modern-input font-bold text-slate-800"></div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div>
                             <h3 class="text-sm font-bold text-slate-800 mb-4 flex items-center gap-2"><i data-lucide="plug" class="w-4 h-4 text-blue-600"></i> Integraciones</h3>
-                            <div class="flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-slate-50">
+                            <div class="flex items-center justify-between p-4 border border-slate-200 rounded-xl bg-white shadow-sm">
                                 <div class="flex items-center gap-4">
-                                    <div class="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-600 border border-slate-100"><i data-lucide="calendar" class="w-5 h-5"></i></div>
+                                    <div class="w-10 h-10 bg-slate-50 rounded-full flex items-center justify-center text-blue-600 border border-slate-100"><i data-lucide="calendar" class="w-5 h-5"></i></div>
                                     <div><p class="font-bold text-sm text-slate-800">Google Calendar</p><p class="text-xs text-slate-500">Sincronización bidireccional (Próximamente)</p></div>
                                 </div>
                                 <button type="button" class="px-4 py-2 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 text-xs font-bold rounded-lg shadow-sm transition">Conectar API</button>
                             </div>
                         </div>
-                        <div class="pt-4 border-t border-slate-100 flex justify-end">
-                            <button type="button" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition" onclick="UI.showToast('Configuración guardada')">Guardar Cambios</button>
+
+                        <div class="pt-6 border-t border-slate-100 flex justify-end">
+                            <button type="button" id="btn-save-config" class="bg-blue-600 text-white px-6 py-2.5 rounded-lg text-sm font-bold shadow-md hover:bg-blue-700 transition flex items-center gap-2">
+                                <i data-lucide="save" class="w-4 h-4"></i> Guardar Configuración
+                            </button>
                         </div>
                     </form>
+                </div>
+            </section>
+
+            <!-- VISTA: COLABORADORES (NUEVO) -->
+            <section id="view-colaboradores" class="view">
+                <div class="glass-panel">
+                    <div class="panel-header">
+                        <div>
+                            <h2 class="panel-title">Gestión de Colaboradores</h2>
+                            <p class="text-sm text-slate-500 mt-1">Administra los accesos y roles de tu equipo de trabajo.</p>
+                        </div>
+                        <div class="flex gap-3">
+                            <button onclick="Controllers.newColaborador()" class="bg-slate-800 hover:bg-slate-900 text-white px-4 py-2 rounded-lg text-sm font-medium flex items-center gap-2 transition shadow-sm">
+                                <i data-lucide="shield-plus" class="w-4 h-4"></i> Nuevo Colaborador
+                            </button>
+                        </div>
+                    </div>
+                    <div class="table-scroll-wrap">
+                        <table class="crm-table">
+                            <thead>
+                                <tr>
+                                    <th>Colaborador</th>
+                                    <th>Correo Electrónico</th>
+                                    <th>Rol en Sistema</th>
+                                    <th>Estado</th>
+                                    <th class="text-center">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="colaboradores-tbody">
+                                <!-- JS inyectará los colaboradores aquí -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </section>
         </main>
@@ -316,7 +386,7 @@
     </div>
 </div>
 
-<!-- Modal Gestión / Nueva Cotización (Cálculo Automático) -->
+<!-- Modal Gestión / Nueva Cotización (Cálculo Automático/Manual) -->
 <div id="modal-cotizacion" class="modal-overlay">
     <div class="modal-content large" onclick="event.stopPropagation()">
         <div class="modal-header bg-slate-50">
@@ -357,10 +427,10 @@
                         <div class="input-group col-span-3 sm:col-span-1">
                             <label>Tipo de Limpieza *</label>
                             <select id="cot-servicio" required class="modern-input cursor-pointer calc-trigger">
-                                <option value="hogar">Limpieza de Hogar Profunda (Base $20.000)</option>
-                                <option value="oficina">Limpieza de Oficinas (Base $35.000)</option>
-                                <option value="post">Limpieza Post-Construcción (Base $80.000)</option>
-                                <option value="electro">Hornos / Electrodomésticos (Fijo $35.000)</option>
+                                <option value="hogar">Limpieza de Hogar Profunda</option>
+                                <option value="oficina">Limpieza de Oficinas</option>
+                                <option value="post">Limpieza Post-Construcción</option>
+                                <option value="electro">Hornos / Electrodomésticos</option>
                             </select>
                         </div>
                         <div class="input-group"><label>Fecha Requerida *</label><input type="date" id="cot-fecha" required class="modern-input"></div>
@@ -385,16 +455,37 @@
                     </div>
                 </div>
 
-                <!-- 3. Resumen Costos -->
+                <!-- 3. Resumen Costos (Calculadora Dinámica) -->
                 <div class="bg-slate-50 p-5 rounded-xl border border-slate-200 shadow-inner">
-                    <h4 class="text-xs font-bold text-blue-800 uppercase tracking-wider mb-3">Cotización Económica</h4>
+                    <div class="flex justify-between items-center mb-3">
+                        <h4 class="text-xs font-bold text-blue-800 uppercase tracking-wider">Cotización Económica</h4>
+                        <select id="cot-modo-calculo" class="modern-input py-1 px-2 text-xs font-semibold cursor-pointer w-auto bg-white border-blue-300 text-blue-700">
+                            <option value="auto">Cálculo Automático (m2)</option>
+                            <option value="manual">Ingreso Manual (Neto)</option>
+                        </select>
+                    </div>
+                    
                     <div class="space-y-2 text-sm text-slate-700">
                         <div class="flex justify-between items-center">
-                            <span>Descuento Especial ($)</span>
-                            <input type="number" id="cot-descuento" value="0" min="0" class="modern-input w-32 text-right calc-trigger">
+                            <span class="font-medium text-slate-800">Valor Neto (Subtotal)</span>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-slate-500 font-bold">$</span>
+                                <input type="number" id="cot-subtotal-input" class="modern-input w-36 text-right pl-6 font-bold text-slate-800 calc-trigger bg-slate-100" readonly>
+                            </div>
                         </div>
-                        <div class="flex justify-between mt-2 pt-2 border-t border-slate-200"><span>Subtotal Calculado</span><span id="label-subtotal" class="font-medium">$ 0</span></div>
-                        <div class="flex justify-between text-xs text-slate-500"><span>IVA (19%)</span><span id="label-iva">$ 0</span></div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span>Descuento Especial ($)</span>
+                            <div class="relative">
+                                <span class="absolute left-3 top-2.5 text-slate-500">$</span>
+                                <input type="number" id="cot-descuento" value="0" min="0" class="modern-input w-36 text-right pl-6 calc-trigger">
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between text-xs text-slate-500 mt-2 pt-2 border-t border-slate-200">
+                            <span>IVA (19%)</span><span id="label-iva" class="font-medium">$ 0</span>
+                        </div>
+                        
                         <div class="border-t border-slate-200 my-2 pt-3 flex justify-between items-center">
                             <span class="font-bold text-slate-800">Total a Cobrar (CLP)</span>
                             <input type="number" id="cot-valor-total" class="modern-input w-40 text-right font-display font-bold text-lg text-blue-700 bg-white shadow-sm" readonly>
@@ -418,11 +509,50 @@
     </div>
 </div>
 
+<!-- Modal Nuevo Colaborador (NUEVO) -->
+<div id="modal-colaborador" class="modal-overlay">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <h3 class="font-bold text-lg text-slate-800">Registrar Nuevo Acceso</h3>
+            <button onclick="UI.closeModal('modal-colaborador')" class="text-slate-400 hover:text-slate-600 transition"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="form-colaborador" class="space-y-4">
+                <div class="input-group">
+                    <label>Nombre Completo *</label>
+                    <input type="text" id="colab-nombre" required class="modern-input" placeholder="Ej: Juan Pérez">
+                </div>
+                <div class="input-group">
+                    <label>Correo Electrónico *</label>
+                    <input type="email" id="colab-correo" required class="modern-input" placeholder="ejemplo@espaciolimpio.cl">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="input-group">
+                        <label>Rol en el Sistema *</label>
+                        <select id="colab-rol" class="modern-input cursor-pointer">
+                            <option value="colaborador">Colaborador (Ventas/Recepción)</option>
+                            <option value="admin">Administrador (Acceso Total)</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Contraseña Temporal *</label>
+                        <input type="text" id="colab-pass" required class="modern-input" placeholder="Min. 6 caracteres">
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 mt-2"><i data-lucide="info" class="inline w-3 h-3 mr-1"></i> El usuario utilizará esta contraseña para su primer ingreso.</p>
+            </form>
+        </div>
+        <div class="modal-footer bg-slate-50">
+            <button onclick="UI.closeModal('modal-colaborador')" class="px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-100 rounded-lg transition">Cancelar</button>
+            <button id="btn-save-colaborador" class="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white text-sm font-medium rounded-lg transition shadow-sm">Crear Cuenta</button>
+        </div>
+    </div>
+</div>
+
 <!-- Contenedor Toasts -->
 <div id="toast-container"></div>
 
 <!-- Lógica JavaScript Core -->
-
 <script type="module" src="js/dashboard.js"></script>
 <script>document.addEventListener('DOMContentLoaded', () => { lucide.createIcons(); });</script>
 </body>
