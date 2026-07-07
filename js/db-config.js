@@ -2,10 +2,12 @@
  * js/db-config.js — Espacio Limpio Ltda.
  * Configuración de Firebase
  */
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { initializeApp } from
+'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 
-// Reemplazar con tus variables de entorno / config reales
+import { getFirestore } from
+
+'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 const firebaseConfig = {
     apiKey: "AIzaSyC3yY7UJHhzWRQkcaOumR2P0rxEAw8c1PQ",
     authDomain: "espacio-limpio-bd699.firebaseapp.com",
@@ -19,5 +21,4 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// Exportación correcta de app y db
 export { app, db };

@@ -4,7 +4,7 @@
  */
 
 // 1. IMPORTACIONES DE FIREBASE (Versión 10.12.0)
-import { app, db } from './db-config.js';
+import { app, db} from './db-config.js';
 import {
     getAuth,
     signInWithEmailAndPassword,
