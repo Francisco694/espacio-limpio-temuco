@@ -13,7 +13,10 @@ import {
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 // Endpoint del backend Node.js encargado de subir imágenes a Cloudinary
-const CLOUDINARY_UPLOAD_ENDPOINT = 'http://localhost:3000/api/upload';
+const CLOUDINARY_UPLOAD_ENDPOINT =
+    window.location.hostname === "localhost"
+        ? "http://localhost:3000/api/upload"
+        : `${window.location.origin}/api/upload`;
 
 // ==========================================
 // 1. FUNCIONES GLOBALES (Modales)
