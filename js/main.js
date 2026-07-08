@@ -16,7 +16,7 @@ import {
 const CLOUDINARY_UPLOAD_ENDPOINT =
     window.location.hostname === "localhost"
         ? "http://localhost:3000/api/upload"
-        : `${window.location.origin}/api/upload`;
+        : "/api/upload";
 
 // ==========================================
 // 1. FUNCIONES GLOBALES (Modales)
