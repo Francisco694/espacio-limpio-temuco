@@ -11,8 +11,6 @@ app.use(express.json());
 
 app.use("/api/upload", uploadRoutes);
 
-const PORT = process.env.PORT || 3000;
-
 app.get("/", (req, res) => {
     res.json({
         status: "OK",
@@ -20,6 +18,4 @@ app.get("/", (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`🚀 Servidor iniciado en http://localhost:${PORT}`);
-});
+export default app;
