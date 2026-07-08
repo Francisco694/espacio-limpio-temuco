@@ -2,10 +2,14 @@
   "name": "espacio-limpio-backend",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "dev": "node dev-server.js"
+  },
   "dependencies": {
     "cloudinary": "^2.10.0",
     "dotenv": "^17.4.2",
     "multer": "^2.2.0",
+    "nodemailer": "^9.0.3",
     "streamifier": "^0.1.1"
   }
 }

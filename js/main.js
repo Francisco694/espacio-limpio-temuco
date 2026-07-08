@@ -18,6 +18,15 @@ const CLOUDINARY_UPLOAD_ENDPOINT =
         ? "http://localhost:3000/api/upload"
         : "/api/upload";
 
+// Endpoint del backend Node.js encargado de enviar las notificaciones por correo
+const SEND_QUOTE_EMAIL_ENDPOINT =
+    window.location.hostname === "localhost"
+        ? "http://localhost:3000/api/send-quote-email"
+        : "/api/send-quote-email";
+
+// Código de área fijo para todos los números ingresados (Chile)
+const TELEFONO_PREFIJO = '+56';
+
 // ==========================================
 // 1. FUNCIONES GLOBALES (Modales)
 // ==========================================
@@ -77,7 +86,7 @@ function getHorariosPorDia(fechaStr) {
     const [yyyy, mm, dd] = fechaStr.split('-');
     const d = new Date(yyyy, mm - 1, dd);
     const dia = d.getDay();
-    
+
     let slots = [];
     if (dia >= 1 && dia <= 5) {
         slots = ['09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30'];
@@ -85,6 +94,13 @@ function getHorariosPorDia(fechaStr) {
         slots = ['09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00'];
     }
     return slots;
+}
+
+// Combina una fecha ("YYYY-MM-DD") y una hora ("HH:MM") en un único Date local
+function combinarFechaHora(fechaStr, horaStr) {
+    const [yyyy, mm, dd] = fechaStr.split('-');
+    const [hh, min] = horaStr.split(':');
+    return new Date(yyyy, mm - 1, dd, hh, min);
 }
 
 async function cargarHorasDisponibles() {
@@ -137,7 +153,12 @@ async function cargarHorasDisponibles() {
             }
         });
 
-        const horasDisponibles = slots.filter(hora => !horasOcupadas.includes(hora));
+        const ahora = new Date();
+        const esHoy = fechaElegida.getTime() === hoy.getTime();
+
+        const horasDisponibles = slots
+            .filter(hora => !horasOcupadas.includes(hora))
+            .filter(hora => !esHoy || combinarFechaHora(fechaStr, hora) > ahora);
 
         selectHora.innerHTML = '<option value="">Seleccione una hora</option>';
         if (horasDisponibles.length === 0) {
@@ -164,14 +185,27 @@ function validarFormulario() {
     const rut = document.getElementById('rut');
     const correo = document.getElementById('correo');
     const telefono = document.getElementById('telefono');
+    const direccion = document.getElementById('direccion');
     const fecha = document.getElementById('fecha');
     const hora = document.getElementById('hora');
     const descripcion = document.getElementById('descripcion');
-    
+
     const tipoClienteSeleccionado = document.querySelector('input[name="tipoCliente"]:checked');
 
-    if (!nombre.value.trim() || !rut.value.trim() || !correo.value.trim() || !telefono.value.trim() || !fecha.value || !hora.value || !descripcion.value.trim() || !tipoClienteSeleccionado) {
+    if (!nombre.value.trim() || !rut.value.trim() || !correo.value.trim() || !telefono.value.trim() || !direccion.value.trim() || !fecha.value || !hora.value || !descripcion.value.trim() || !tipoClienteSeleccionado) {
         formError.textContent = 'Por favor, completa todos los campos y selecciona una hora disponible.';
+        formError.classList.remove('hidden');
+        esValido = false;
+    }
+
+    if (correo.value.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.value.trim())) {
+        formError.textContent = 'Ingresa un correo electrónico válido.';
+        formError.classList.remove('hidden');
+        esValido = false;
+    }
+
+    if (telefono.value.trim() && !/^[0-9]{9}$/.test(telefono.value.trim())) {
+        formError.textContent = 'El teléfono debe contener exactamente 9 números (sin el +56).';
         formError.classList.remove('hidden');
         esValido = false;
     }
@@ -181,12 +215,18 @@ function validarFormulario() {
         hoy.setHours(0, 0, 0, 0);
         const [yyyy, mm, dd] = fecha.value.split('-');
         const fechaElegida = new Date(yyyy, mm - 1, dd);
-        
+
         if (fechaElegida < hoy) {
             formError.textContent = 'La fecha sugerida no puede estar en el pasado.';
             formError.classList.remove('hidden');
             esValido = false;
         }
+    }
+
+    if (fecha.value && hora.value && combinarFechaHora(fecha.value, hora.value) <= new Date()) {
+        formError.textContent = 'La hora seleccionada ya pasó. Por favor elige otro horario.';
+        formError.classList.remove('hidden');
+        esValido = false;
     }
 
     return esValido;
@@ -275,7 +315,8 @@ async function handleFormSubmit(e) {
             rut: document.getElementById('rut').value.trim(),
             tipoCliente: document.querySelector('input[name="tipoCliente"]:checked').value,
             correo: document.getElementById('correo').value.trim(),
-            telefono: document.getElementById('telefono').value.trim(),
+            telefono: `${TELEFONO_PREFIJO} ${document.getElementById('telefono').value.trim()}`,
+            direccion: document.getElementById('direccion').value.trim(),
             fecha: document.getElementById('fecha').value,
             hora: document.getElementById('hora').value,
             descripcion: document.getElementById('descripcion').value.trim(),
@@ -289,10 +330,21 @@ async function handleFormSubmit(e) {
         const docRef = await addDoc(collection(db, 'cotizaciones'), cotizacion);
         console.log(`[CRM] Nueva solicitud registrada: ${docRef.id}`);
 
+        // 5. NOTIFICAR POR CORREO AL CLIENTE Y AL ADMINISTRADOR (no bloquea el éxito si falla)
+        try {
+            await fetch(SEND_QUOTE_EMAIL_ENDPOINT, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...cotizacion, creadoEn: undefined })
+            });
+        } catch (emailError) {
+            console.error('[Notificación por correo] Error:', emailError);
+        }
+
         // Ocultar formulario y mostrar éxito
         formContent.classList.add('hidden');
         successMessage.classList.remove('hidden');
-        
+
     } catch (error) {
         console.error('[Firebase Error]', error);
         formError.textContent = `Hubo un error al procesar tu solicitud. Intenta nuevamente.`;
@@ -365,6 +417,14 @@ function initUI() {
             } else {
                 filePreview.innerHTML = '';
             }
+        });
+    }
+
+    // Teléfono: solo dígitos, máximo 9 (código de área +56 fijo y no editable)
+    const inputTelefono = document.getElementById('telefono');
+    if (inputTelefono) {
+        inputTelefono.addEventListener('input', () => {
+            inputTelefono.value = inputTelefono.value.replace(/\D/g, '').slice(0, 9);
         });
     }
 
